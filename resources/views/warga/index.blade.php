@@ -183,20 +183,55 @@
             </div>
 
             <form id="form-tamu-warga" onsubmit="submitTamuWarga(event)" class="space-y-3">
+                <!-- Pilihan Kewarganegaraan Tamu -->
+                <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-200/80">
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Status Kewarganegaraan Tamu</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="flex items-center justify-center gap-1.5 p-2 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-blue-500 transition has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50/70 has-[:checked]:text-blue-900 font-bold text-xs text-slate-700 shadow-2xs">
+                            <input type="radio" name="tamu_w_kewarganegaraan" value="WNI" checked onchange="toggleKewarganegaraanTamuWarga('WNI')" class="accent-blue-600">
+                            <span>🇮🇩 WNI (Indonesia)</span>
+                        </label>
+                        <label class="flex items-center justify-center gap-1.5 p-2 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-blue-500 transition has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50/70 has-[:checked]:text-blue-900 font-bold text-xs text-slate-700 shadow-2xs">
+                            <input type="radio" name="tamu_w_kewarganegaraan" value="WNA" onchange="toggleKewarganegaraanTamuWarga('WNA')" class="accent-blue-600">
+                            <span>🌐 WNA (Asing)</span>
+                        </label>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Nama Tamu</label>
-                        <input type="text" id="tamu-w-nama" required placeholder="Nama lengkap sesuai KTP" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500">
+                        <input type="text" id="tamu-w-nama" required placeholder="Nama lengkap sesuai dokumen identitas" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500">
                     </div>
+
+                    <!-- Identitas Dinamis: NIK untuk WNI -->
+                    <div id="wrap-tamu-w-nik">
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            NIK (Nomor Induk Kependudukan) <span class="text-rose-500">*</span>
+                        </label>
+                        <input type="text" id="tamu-w-nik" required maxlength="16" pattern="[0-9]{16}" placeholder="16 Digit NIK sesuai e-KTP" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 font-mono">
+                        <span class="text-[9px] text-slate-400 mt-0.5 block">Wajib 16 digit angka sesuai KTP tamu WNI</span>
+                    </div>
+
+                    <!-- Identitas Dinamis: Paspor untuk WNA -->
+                    <div id="wrap-tamu-w-paspor" class="hidden">
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            Nomor Paspor / Dokumen Imigrasi <span class="text-rose-500">*</span>
+                        </label>
+                        <input type="text" id="tamu-w-paspor" maxlength="50" placeholder="Contoh: A12345678 / Paspor Resmi" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 font-mono uppercase">
+                        <span class="text-[9px] text-slate-400 mt-0.5 block">Wajib nomor paspor bagi tamu WNA</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">No. WhatsApp / HP</label>
                         <input type="tel" id="tamu-w-hp" required placeholder="08xxxxxxxxxx" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500">
                     </div>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Alamat Domisili Asal</label>
-                    <input type="text" id="tamu-w-alamat" required placeholder="Kota atau alamat lengkap domisili asal" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Alamat Asal / Negara Asal</label>
+                        <input type="text" id="tamu-w-alamat" required placeholder="Kota domisili atau negara asal" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500">
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -238,20 +273,20 @@
             
             <!-- Daftar Laporan -->
             <div class="space-y-2">
-                <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Laporan Kejadian Terakhir</h4>
+                <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Laporan Warga Terkini</h4>
                 @forelse($laporanList as $lap)
                 <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200/60 text-xs space-y-1">
                     <div class="flex items-center justify-between gap-2">
-                        <p class="font-bold text-slate-900 truncate">{{ $lap->judul }}</p>
-                        <span class="text-[9px] px-2 py-0.5 rounded-full font-bold uppercase {{ $lap->status === 'selesai' ? 'bg-emerald-100 text-emerald-800' : ($lap->status === 'diproses' ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800') }}">
+                        <p class="font-bold text-slate-900">{{ $lap->judul }}</p>
+                        <span class="text-[9px] px-2 py-0.5 rounded-full font-bold uppercase {{ $lap->status === 'selesai' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' }}">
                             {{ $lap->status }}
                         </span>
                     </div>
-                    <p class="text-slate-500 text-[11px]">{{ $lap->deskripsi }}</p>
-                    <p class="text-[10px] text-slate-400">{{ \Carbon\Carbon::parse($lap->created_at)->diffForHumans() }} &bull; Pelapor: {{ $lap->user->name ?? 'Warga' }}</p>
+                    <p class="text-slate-600 line-clamp-2">{{ $lap->deskripsi }}</p>
+                    <p class="text-[10px] text-slate-400">Oleh: {{ $lap->user->name ?? 'Warga' }} &bull; {{ $lap->created_at->diffForHumans() }}</p>
                 </div>
                 @empty
-                <p class="text-xs text-slate-400 p-3 bg-slate-50 rounded-xl">Belum ada laporan insiden.</p>
+                <p class="text-xs text-slate-400 p-3 bg-slate-50 rounded-xl">Belum ada laporan warga terbaru.</p>
                 @endforelse
             </div>
 
@@ -265,6 +300,13 @@
                         <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold uppercase">
                             {{ $tamu->status }}
                         </span>
+                    </div>
+                    <div>
+                        @if(($tamu->kewarganegaraan ?? 'WNI') === 'WNA')
+                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold">🌐 WNA • Paspor: {{ $tamu->nomor_paspor ?? '-' }}</span>
+                        @else
+                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-bold">🇮🇩 WNI • NIK: {{ $tamu->nik ?? '-' }}</span>
+                        @endif
                     </div>
                     <p class="text-[11px] text-slate-500">Asal: {{ $tamu->alamat_asal }}</p>
                     <p class="text-[10px] text-blue-700 font-medium">Tujuan: {{ $tamu->warga_yang_dikunjungi }} &bull; Masuk: {{ \Carbon\Carbon::parse($tamu->tanggal_tiba)->format('d M Y H:i') }}</p>
@@ -558,40 +600,98 @@
         });
     }
 
+    // Toggle Identitas Tamu Warga (WNI = NIK, WNA = Paspor)
+    function toggleKewarganegaraanTamuWarga(tipe) {
+        const wrapNik = document.getElementById('wrap-tamu-w-nik');
+        const wrapPaspor = document.getElementById('wrap-tamu-w-paspor');
+        const inputNik = document.getElementById('tamu-w-nik');
+        const inputPaspor = document.getElementById('tamu-w-paspor');
+
+        if (tipe === 'WNA') {
+            wrapNik.classList.add('hidden');
+            wrapPaspor.classList.remove('hidden');
+            inputNik.removeAttribute('required');
+            inputPaspor.setAttribute('required', 'required');
+            inputPaspor.focus();
+        } else {
+            wrapPaspor.classList.add('hidden');
+            wrapNik.classList.remove('hidden');
+            inputPaspor.removeAttribute('required');
+            inputNik.setAttribute('required', 'required');
+            inputNik.focus();
+        }
+    }
+
     function submitTamuWarga(e) {
         e.preventDefault();
-        const nama = document.getElementById('tamu-w-nama').value;
-        const hp = document.getElementById('tamu-w-hp').value;
-        const alamat = document.getElementById('tamu-w-alamat').value;
-        const tujuan = document.getElementById('tamu-w-tujuan').value;
-        const keperluan = document.getElementById('tamu-w-keperluan').value;
+        const nama = document.getElementById('tamu-w-nama').value.trim();
+        const kewarganegaraan = document.querySelector('input[name="tamu_w_kewarganegaraan"]:checked')?.value || 'WNI';
+        const nik = document.getElementById('tamu-w-nik')?.value.trim() || '';
+        const paspor = document.getElementById('tamu-w-paspor')?.value.trim() || '';
+        const hp = document.getElementById('tamu-w-hp').value.trim();
+        const alamat = document.getElementById('tamu-w-alamat').value.trim();
+        const tujuan = document.getElementById('tamu-w-tujuan').value.trim();
+        const keperluan = document.getElementById('tamu-w-keperluan').value.trim();
         const feedback = document.getElementById('tamu-w-feedback');
 
+        if (kewarganegaraan === 'WNI') {
+            if (!nik) {
+                alert('⚠️ NIK wajib diisi untuk tamu WNI.');
+                document.getElementById('tamu-w-nik').focus();
+                return;
+            }
+            if (nik.length !== 16 || !/^\d+$/.test(nik)) {
+                if (!confirm('⚠️ NIK standar berjumlah 16 digit angka. Lanjutkan dengan NIK ini?')) {
+                    document.getElementById('tamu-w-nik').focus();
+                    return;
+                }
+            }
+        } else {
+            if (!paspor) {
+                alert('⚠️ Nomor Paspor / Dokumen Imigrasi wajib diisi untuk tamu WNA.');
+                document.getElementById('tamu-w-paspor').focus();
+                return;
+            }
+        }
+
         feedback.innerHTML = '⏳ Menyimpan data tamu wajib lapor 2x24 jam...';
+        feedback.className = 'p-3 rounded-2xl bg-blue-50 border border-blue-200 text-blue-900 text-xs font-semibold text-center animate-in fade-in block';
         feedback.classList.remove('hidden');
 
         fetch('/api/buku-tamu', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             },
             body: JSON.stringify({
                 nama_tamu: nama,
+                kewarganegaraan: kewarganegaraan,
+                nik: kewarganegaraan === 'WNI' ? nik : null,
+                nomor_paspor: kewarganegaraan === 'WNA' ? paspor : null,
                 no_hp: hp,
                 alamat_asal: alamat,
                 warga_yang_dikunjungi: tujuan,
                 tujuan_kunjungan: keperluan
             })
         })
-        .then(res => res.json())
-        .then(data => {
-            feedback.innerHTML = `✅ <strong>Pendaftaran Tamu Berhasil!</strong> Tamu ${nama} telah tercatat dalam sistem 2x24 jam.`;
-            document.getElementById('form-tamu-warga').reset();
+        .then(async (res) => {
+            const data = await res.json();
+            if (res.ok && data.success) {
+                const identitasText = kewarganegaraan === 'WNA' ? `Paspor: ${paspor}` : `NIK: ${nik}`;
+                feedback.className = 'p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold text-center animate-in fade-in block';
+                feedback.innerHTML = `✅ <strong>Pendaftaran Tamu Berhasil!</strong> Tamu <strong>${nama}</strong> (${kewarganegaraan} • ${identitasText}) telah tercatat dalam sistem 2x24 jam.`;
+                document.getElementById('form-tamu-warga').reset();
+                toggleKewarganegaraanTamuWarga('WNI');
+            } else {
+                feedback.className = 'p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-semibold text-center animate-in fade-in block';
+                feedback.innerHTML = `⚠️ <strong>Pendaftaran Gagal:</strong> ${data.message || 'Terjadi kesalahan sistem'}`;
+            }
         })
-        .catch(() => {
-            feedback.innerHTML = `✅ <strong>Tamu Terdaftar (Demo Mode)!</strong>`;
-            document.getElementById('form-tamu-warga').reset();
+        .catch((err) => {
+            feedback.className = 'p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-semibold text-center animate-in fade-in block';
+            feedback.innerHTML = `⚠️ <strong>Kesalahan Jaringan:</strong> ${err.message}`;
         });
     }
 </script>

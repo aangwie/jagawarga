@@ -2,6 +2,64 @@
 
 @section('title', 'JagaWarga RW 02 - Sistem Integrasi Keamanan Warga Digital')
 
+@push('styles')
+<!-- DataTables CSS & Styling -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css" />
+<style>
+    /* DataTables Custom Theme Styling */
+    .dataTables_wrapper .dataTables_length select {
+        padding: 0.35rem 2rem 0.35rem 0.75rem;
+        font-size: 0.75rem;
+        border-radius: 0.75rem;
+        border: 1px solid #cbd5e1;
+        background-color: #fff;
+    }
+    .dataTables_wrapper .dataTables_filter input {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.75rem;
+        border-radius: 0.75rem;
+        border: 1px solid #cbd5e1;
+        outline: none;
+        margin-left: 0.5rem;
+    }
+    .dataTables_wrapper .dataTables_filter input:focus {
+        border-color: #7c3aed;
+        box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2);
+    }
+    .dataTables_wrapper .dataTables_paginate .paginate_button {
+        padding: 0.25rem 0.65rem !important;
+        font-size: 0.75rem !important;
+        border-radius: 0.5rem !important;
+        border: 1px solid #e2e8f0 !important;
+        margin: 0 2px !important;
+        background: white !important;
+        color: #475569 !important;
+    }
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current,
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+        background: #7c3aed !important;
+        color: white !important;
+        border-color: #7c3aed !important;
+        font-weight: bold !important;
+    }
+    .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+        background: #f1f5f9 !important;
+        color: #0f172a !important;
+    }
+    .dataTables_wrapper .dataTables_info {
+        font-size: 0.75rem;
+        color: #64748b;
+        padding-top: 0.75rem;
+    }
+    table.dataTable.no-footer {
+        border-bottom: 1px solid #f1f5f9 !important;
+    }
+    table.dataTable thead th {
+        border-bottom: 2px solid #e2e8f0 !important;
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="space-y-6">
 
@@ -128,6 +186,200 @@
 
         </div>
     </section>
+
+    <!-- SEKSI: TABEL RIWAYAT AKTIVASI KENTONGAN ONLINE & LOKASI (DATATABLES) -->
+    @php
+        $isAdmin = Auth::check() && in_array(Auth::user()->role, ['admin', 'rt', 'rw', 'bhabinkamtibmas']);
+    @endphp
+    <section id="riwayat-kentongan-section" class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-sm space-y-4">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center text-xl font-bold shadow-inner">
+                    🚨
+                </div>
+                <div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 text-[10px] font-extrabold uppercase tracking-wider">
+                            Data Kejadian Real-Time
+                        </span>
+                        @if($isAdmin)
+                        <span class="px-2 py-0.5 rounded-md bg-violet-100 text-violet-800 text-[10px] font-bold flex items-center gap-1 border border-violet-200">
+                            <span>🛡️</span> Mode Admin: Hak Edit & Hapus Aktif
+                        </span>
+                        @endif
+                    </div>
+                    <h2 class="text-base sm:text-lg font-black text-slate-900 tracking-tight mt-0.5">
+                        Riwayat Aktivasi Kentongan Online & Titik Lokasi
+                    </h2>
+                    <p class="text-xs text-slate-500">
+                        Pencatatan waktu kejadian, jenis bahaya, koordinat GPS, dan tautan Google Maps langsung.
+                    </p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="refreshTabelKentongan()" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 border border-slate-200 cursor-pointer">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                    <span>Segarkan Data</span>
+                </button>
+            </div>
+        </div>
+
+        {{-- Feedback Alert untuk Operasi Tabel --}}
+        <div id="tabel-panic-feedback" class="hidden p-3.5 rounded-2xl text-xs font-semibold text-center animate-in fade-in"></div>
+
+        {{-- Tabel DataTables Riwayat Kentongan --}}
+        <div class="overflow-x-auto">
+            <table id="tabel-kentongan" class="w-full text-xs stripe hover" style="width:100%">
+                <thead>
+                    <tr class="bg-slate-50 text-slate-600 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200">
+                        <th class="text-center px-3 py-3 w-10">#</th>
+                        <th class="text-left px-3 py-3">Waktu & Tanggal</th>
+                        <th class="text-left px-3 py-3">Jenis Kejadian</th>
+                        <th class="text-left px-3 py-3">Keterangan</th>
+                        <th class="text-left px-3 py-3">Titik Lokasi & Maps</th>
+                        <th class="text-left px-3 py-3">Pelapor / Status</th>
+                        @if($isAdmin)
+                        <th class="text-center px-3 py-3 w-28">Aksi Admin</th>
+                        @endif
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 font-medium text-slate-700">
+                    @forelse($riwayatKentongan ?? [] as $index => $item)
+                    <tr id="row-panic-{{ $item->id }}" data-id="{{ $item->id }}">
+                        <td class="text-center px-3 py-3 font-bold text-slate-400">{{ $loop->iteration }}</td>
+                        <td class="px-3 py-3 whitespace-nowrap" data-order="{{ $item->created_at ? $item->created_at->timestamp : 0 }}">
+                            <span class="font-bold text-slate-900 block row-waktu-text">{{ $item->waktu_formatted }}</span>
+                            <span class="text-[10px] text-slate-400">{{ $item->created_at ? $item->created_at->diffForHumans() : '-' }}</span>
+                        </td>
+                        <td class="px-3 py-3 whitespace-nowrap">
+                            @php
+                                $badgeClass = match($item->kategori) {
+                                    'pencurian' => 'bg-rose-100 text-rose-800 border-rose-200',
+                                    'kebakaran' => 'bg-orange-100 text-orange-800 border-orange-200',
+                                    'medis' => 'bg-blue-100 text-blue-800 border-blue-200',
+                                    default => 'bg-amber-100 text-amber-800 border-amber-200',
+                                };
+                            @endphp
+                            <span class="row-kategori-badge inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-extrabold border {{ $badgeClass }}">
+                                <span class="badge-icon">{{ $item->kategori_icon }}</span>
+                                <span class="badge-kategori-text">{{ $item->kategori_badge }}</span>
+                            </span>
+                        </td>
+                        <td class="px-3 py-3">
+                            <span class="row-catatan-text font-semibold text-slate-800 block max-w-xs">{{ $item->catatan ?: 'Sinyal bahaya kentongan online' }}</span>
+                        </td>
+                        <td class="px-3 py-3 whitespace-nowrap">
+                            <div class="space-y-1">
+                                <span class="font-mono text-[11px] text-slate-600 block">
+                                    {{ number_format((float)$item->latitude, 6) }}, {{ number_format((float)$item->longitude, 6) }}
+                                </span>
+                                <a href="{{ $item->google_maps_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-[10px] transition border border-emerald-200 cursor-pointer shadow-2xs">
+                                    <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                    <span>📍 Buka Google Maps</span>
+                                </a>
+                            </div>
+                        </td>
+                        <td class="px-3 py-3 whitespace-nowrap">
+                            <span class="row-pelapor-text block font-bold text-slate-800 text-[11px]">{{ $item->nama_pelapor }}</span>
+                            <span class="inline-block mt-0.5 px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase {{ $item->status === 'selesai' ? 'bg-slate-100 text-slate-600' : ($item->status === 'ditangani' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-700') }}">
+                                {{ $item->status ?: 'aktif' }}
+                            </span>
+                        </td>
+                        @if($isAdmin)
+                        <td class="px-3 py-3 text-center whitespace-nowrap">
+                            <div class="flex items-center justify-center gap-1">
+                                <button type="button" onclick="bukaModalEditKentongan({{ $item->id }}, '{{ $item->kategori }}', '{{ addslashes($item->catatan ?? '') }}', '{{ $item->waktu_formatted }}', '{{ addslashes($item->nama_pelapor ?? '') }}', '{{ number_format((float)$item->latitude, 6) }}, {{ number_format((float)$item->longitude, 6) }}')" class="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 transition border border-amber-200 cursor-pointer" title="Edit Jenis Kejadian & Keterangan">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                </button>
+                                <button type="button" onclick="hapusRiwayatKentongan({{ $item->id }}, '{{ $item->waktu_formatted }}')" class="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 transition border border-rose-200 cursor-pointer" title="Hapus Riwayat Kejadian">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                </button>
+                            </div>
+                        </td>
+                        @endif
+                    </tr>
+                    @empty
+                    {{-- Diisi secara otomatis oleh DataTables jika kosong --}}
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- MODAL EDIT RIWAYAT KENTONGAN (HANYA ADMIN) -->
+    @if($isAdmin)
+    <div id="modal-edit-kentongan" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95 text-left">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2">
+                    <span class="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-sm">
+                        ✏️
+                    </span>
+                    <div>
+                        <h3 class="text-sm font-extrabold text-slate-900">Edit Riwayat Kentongan</h3>
+                        <p class="text-[10px] text-slate-500">Khusus mengubah Jenis Kejadian &amp; Keterangan</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeModal('modal-edit-kentongan')" class="text-slate-400 hover:text-slate-600 cursor-pointer">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+
+            {{-- Info Read-Only (Waktu, Pelapor, Lokasi) --}}
+            <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-1 text-[11px]">
+                <div class="flex items-center justify-between">
+                    <span class="text-slate-500 font-medium">Waktu Kejadian:</span>
+                    <span id="edit-modal-waktu" class="font-bold text-slate-800">-</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-slate-500 font-medium">Pelapor:</span>
+                    <span id="edit-modal-pelapor" class="font-bold text-slate-800">-</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-slate-500 font-medium">Koordinat GPS:</span>
+                    <span id="edit-modal-koordinat" class="font-mono text-slate-700">-</span>
+                </div>
+            </div>
+
+            <form id="form-edit-kentongan" onsubmit="submitEditKentongan(event)" class="space-y-4">
+                <input type="hidden" id="edit-modal-id">
+
+                {{-- Field 1: Jenis Kejadian --}}
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">
+                        Jenis Kejadian (Kategori) <span class="text-rose-500">*</span>
+                    </label>
+                    <select id="edit-modal-kategori" required class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-200 font-bold text-slate-800 bg-white">
+                        <option value="pencurian">🚨 Pencurian / Maling (Doro Muluk)</option>
+                        <option value="kebakaran">🔥 Bahaya Kebakaran (Titir Ganda)</option>
+                        <option value="medis">🚑 Darurat Medis / Ambulans (Dua Nada)</option>
+                        <option value="lainnya">⚠️ Siaga Lingkungan / Lainnya</option>
+                    </select>
+                </div>
+
+                {{-- Field 2: Keterangan --}}
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">
+                        Keterangan Kejadian <span class="text-rose-500">*</span>
+                    </label>
+                    <textarea id="edit-modal-catatan" rows="3" required placeholder="Tuliskan keterangan detail kejadian di sini..." class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-200"></textarea>
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeModal('modal-edit-kentongan')" class="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer">
+                        Batal
+                    </button>
+                    <button type="submit" id="btn-simpan-edit-kentongan" class="flex-1 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold transition shadow-md cursor-pointer flex items-center justify-center gap-1.5">
+                        <span>Simpan Perubahan</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    @endif
 
     <!-- SEKSI 2: KARTU FITUR UTAMA (PILIHAN CEPAT) -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -301,10 +553,43 @@
             <p class="text-xs text-slate-500 mt-0.5">Tamu keluarga, kerabat yang menginap, atau pengontrak baru wajib mengisi pendataan mandiri.</p>
         </div>
 
-        <form id="form-buku-tamu" onsubmit="handleFormBukuTamu(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl">
+        <form id="form-buku-tamu" onsubmit="handleFormBukuTamu(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 max-w-2xl">
+            <!-- Pilihan Kewarganegaraan Tamu -->
+            <div class="sm:col-span-2 bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
+                <label class="block text-xs font-bold text-slate-700 mb-2">Status Kewarganegaraan Tamu</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <label class="flex items-center justify-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-blue-500 transition has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50/70 has-[:checked]:text-blue-900 font-bold text-xs text-slate-700 shadow-2xs">
+                        <input type="radio" name="tamu_kewarganegaraan" value="WNI" checked onchange="toggleKewarganegaraanTamu('WNI')" class="accent-blue-600">
+                        <span>🇮🇩 WNI (Warga Indonesia)</span>
+                    </label>
+                    <label class="flex items-center justify-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-blue-500 transition has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50/70 has-[:checked]:text-blue-900 font-bold text-xs text-slate-700 shadow-2xs">
+                        <input type="radio" name="tamu_kewarganegaraan" value="WNA" onchange="toggleKewarganegaraanTamu('WNA')" class="accent-blue-600">
+                        <span>🌐 WNA (Warga Asing)</span>
+                    </label>
+                </div>
+            </div>
+
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">Nama Lengkap Tamu</label>
-                <input type="text" id="tamu-nama" required placeholder="Nama lengkap sesuai KTP" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500">
+                <input type="text" id="tamu-nama" required placeholder="Nama lengkap sesuai dokumen identitas" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500">
+            </div>
+
+            <!-- Identitas Dinamis: NIK untuk WNI -->
+            <div id="wrap-tamu-nik">
+                <label class="block text-xs font-bold text-slate-700 mb-1">
+                    NIK (Nomor Induk Kependudukan) <span class="text-rose-500">*</span>
+                </label>
+                <input type="text" id="tamu-nik" required maxlength="16" pattern="[0-9]{16}" placeholder="16 Digit NIK sesuai e-KTP" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 font-mono">
+                <span class="text-[10px] text-slate-400 mt-0.5 block">Wajib 16 digit angka sesuai KTP tamu WNI</span>
+            </div>
+
+            <!-- Identitas Dinamis: Nomor Paspor untuk WNA -->
+            <div id="wrap-tamu-paspor" class="hidden">
+                <label class="block text-xs font-bold text-slate-700 mb-1">
+                    Nomor Paspor / Dokumen Imigrasi <span class="text-rose-500">*</span>
+                </label>
+                <input type="text" id="tamu-paspor" maxlength="50" placeholder="Contoh: A12345678 / Paspor Resmi" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 font-mono uppercase">
+                <span class="text-[10px] text-slate-400 mt-0.5 block">Wajib nomor paspor atau izin tinggal bagi tamu WNA</span>
             </div>
 
             <div>
@@ -313,8 +598,8 @@
             </div>
 
             <div class="sm:col-span-2">
-                <label class="block text-xs font-bold text-slate-700 mb-1">Alamat Asal / Kota Domisili</label>
-                <input type="text" id="tamu-alamat" required placeholder="Kota atau alamat lengkap asal" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500">
+                <label class="block text-xs font-bold text-slate-700 mb-1">Alamat Asal / Negara Asal</label>
+                <input type="text" id="tamu-alamat" required placeholder="Kota asal atau negara asal domisili tamu" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500">
             </div>
 
             <div>
@@ -460,7 +745,14 @@
                             <p class="font-bold text-slate-900">{{ $tamu->nama_tamu }}</p>
                             <span class="text-[9px] px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 font-bold uppercase">{{ $tamu->status }}</span>
                         </div>
-                        <p class="text-[11px] text-slate-500">Asal: {{ $tamu->alamat_asal }}</p>
+                        <div class="mt-1">
+                            @if(($tamu->kewarganegaraan ?? 'WNI') === 'WNA')
+                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold">🌐 WNA • Paspor: {{ $tamu->nomor_paspor ?? '-' }}</span>
+                            @else
+                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-bold">🇮🇩 WNI • NIK: {{ $tamu->nik ?? '-' }}</span>
+                            @endif
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-1">Asal: {{ $tamu->alamat_asal }}</p>
                         <p class="text-[10px] text-blue-700 font-medium mt-0.5">Tujuan: {{ $tamu->warga_yang_dikunjungi }}</p>
                     </div>
                     @empty
@@ -739,6 +1031,7 @@
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             },
             body: JSON.stringify({
@@ -750,14 +1043,27 @@
         })
         .then(async (res) => {
             const data = await res.json();
-            if (!res.ok && data.out_of_radius) {
+            if (!res.ok) {
                 stopEmergencySound();
                 feedback.className = 'p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-semibold text-center animate-in fade-in';
-                feedback.innerHTML = `🚫 <strong>DITOLAK SISTEM:</strong> ${data.message}`;
+                if (data.out_of_radius) {
+                    feedback.innerHTML = `🚫 <strong>DITOLAK SISTEM:</strong> ${data.message}`;
+                } else {
+                    feedback.innerHTML = `⚠️ <strong>GAGAL MENCATAT:</strong> ${data.message || 'Terjadi kesalahan pada sistem.'}`;
+                }
+            } else if (res.ok && data.alert) {
+                feedback.className = 'p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold text-center animate-in fade-in';
+                feedback.innerHTML = `🚨 <strong>SINYAL DARURAT BERHASIL DICATAT!</strong> Alarm sirine telah disiarkan ke Pos Ronda & HP pengurus RW.`;
+                // Tambahkan rekaman kentongan ke DataTables seketika
+                if (typeof tambahBarisKeDataTable === 'function') {
+                    tambahBarisKeDataTable(data.alert);
+                }
             }
         })
         .catch(err => {
-            console.log('Panic Alert berjalan dalam mode offline/demo:', err);
+            stopEmergencySound();
+            feedback.className = 'p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-semibold text-center animate-in fade-in';
+            feedback.innerHTML = `⚠️ <strong>KESALAHAN KONEKSI:</strong> Tidak dapat menghubungi server (${err.message})`;
         });
     }
 
@@ -875,41 +1181,99 @@
         });
     }
 
+    // Toggle Input Identitas Tamu (WNI = NIK, WNA = Nomor Paspor)
+    function toggleKewarganegaraanTamu(tipe) {
+        const wrapNik = document.getElementById('wrap-tamu-nik');
+        const wrapPaspor = document.getElementById('wrap-tamu-paspor');
+        const inputNik = document.getElementById('tamu-nik');
+        const inputPaspor = document.getElementById('tamu-paspor');
+
+        if (tipe === 'WNA') {
+            wrapNik.classList.add('hidden');
+            wrapPaspor.classList.remove('hidden');
+            inputNik.removeAttribute('required');
+            inputPaspor.setAttribute('required', 'required');
+            inputPaspor.focus();
+        } else {
+            wrapPaspor.classList.add('hidden');
+            wrapNik.classList.remove('hidden');
+            inputPaspor.removeAttribute('required');
+            inputNik.setAttribute('required', 'required');
+            inputNik.focus();
+        }
+    }
+
     // Form Buku Tamu 2x24 Jam
     function handleFormBukuTamu(e) {
         e.preventDefault();
-        const nama = document.getElementById('tamu-nama').value;
-        const hp = document.getElementById('tamu-hp').value;
-        const alamat = document.getElementById('tamu-alamat').value;
-        const warga = document.getElementById('tamu-warga').value;
-        const tujuan = document.getElementById('tamu-tujuan').value;
+        const nama = document.getElementById('tamu-nama').value.trim();
+        const kewarganegaraan = document.querySelector('input[name="tamu_kewarganegaraan"]:checked')?.value || 'WNI';
+        const nik = document.getElementById('tamu-nik')?.value.trim() || '';
+        const paspor = document.getElementById('tamu-paspor')?.value.trim() || '';
+        const hp = document.getElementById('tamu-hp').value.trim();
+        const alamat = document.getElementById('tamu-alamat').value.trim();
+        const warga = document.getElementById('tamu-warga').value.trim();
+        const tujuan = document.getElementById('tamu-tujuan').value.trim();
         const feedback = document.getElementById('tamu-feedback');
 
+        if (kewarganegaraan === 'WNI') {
+            if (!nik) {
+                alert('⚠️ NIK wajib diisi untuk tamu WNI.');
+                document.getElementById('tamu-nik').focus();
+                return;
+            }
+            if (nik.length !== 16 || !/^\d+$/.test(nik)) {
+                if (!confirm('⚠️ NIK standar berjumlah 16 digit angka. Lanjutkan dengan NIK yang dimasukkan?')) {
+                    document.getElementById('tamu-nik').focus();
+                    return;
+                }
+            }
+        } else {
+            if (!paspor) {
+                alert('⚠️ Nomor Paspor / Dokumen Imigrasi wajib diisi untuk tamu WNA.');
+                document.getElementById('tamu-paspor').focus();
+                return;
+            }
+        }
+
         feedback.innerHTML = '⏳ Mendaftarkan tamu ke buku tamu digital RW 02...';
+        feedback.className = 'p-3 rounded-2xl bg-blue-50 border border-blue-200 text-blue-900 text-xs font-semibold text-center animate-in fade-in block';
         feedback.classList.remove('hidden');
 
         fetch('/api/buku-tamu', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             },
             body: JSON.stringify({
                 nama_tamu: nama,
+                kewarganegaraan: kewarganegaraan,
+                nik: kewarganegaraan === 'WNI' ? nik : null,
+                nomor_paspor: kewarganegaraan === 'WNA' ? paspor : null,
                 no_hp: hp,
                 alamat_asal: alamat,
                 warga_yang_dikunjungi: warga,
                 tujuan_kunjungan: tujuan
             })
         })
-        .then(res => res.json())
-        .then(data => {
-            feedback.innerHTML = `✅ <strong>Pendataan Tamu Berhasil!</strong> Tamu <strong>${nama}</strong> telah terdaftar. Pemberitahuan telah diteruskan ke Ketua RT setempat.`;
-            document.getElementById('form-buku-tamu').reset();
+        .then(async (res) => {
+            const data = await res.json();
+            if (res.ok && data.success) {
+                const identitasText = kewarganegaraan === 'WNA' ? `Paspor: ${paspor}` : `NIK: ${nik}`;
+                feedback.className = 'p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold text-center animate-in fade-in block';
+                feedback.innerHTML = `✅ <strong>Pendataan Tamu Berhasil!</strong> Tamu <strong>${nama}</strong> (${kewarganegaraan} • ${identitasText}) telah terdaftar. Pemberitahuan diteruskan ke Ketua RT setempat.`;
+                document.getElementById('form-buku-tamu').reset();
+                toggleKewarganegaraanTamu('WNI');
+            } else {
+                feedback.className = 'p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-semibold text-center animate-in fade-in block';
+                feedback.innerHTML = `⚠️ <strong>Pendaftaran Gagal:</strong> ${data.message || 'Terjadi kesalahan sistem'}`;
+            }
         })
-        .catch(() => {
-            feedback.innerHTML = `✅ <strong>Tamu Terdaftar (Demo Mode)!</strong> Data kunjungan 2x24 jam telah tercatat di pos RW.`;
-            document.getElementById('form-buku-tamu').reset();
+        .catch((err) => {
+            feedback.className = 'p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-semibold text-center animate-in fade-in block';
+            feedback.innerHTML = `⚠️ <strong>Kesalahan Jaringan:</strong> ${err.message}`;
         });
     }
 
@@ -926,5 +1290,252 @@
         };
         if (greeting) greeting.innerText = greetings[role] || greetings['warga'];
     });
+</script>
+
+<!-- CDN jQuery & DataTables JS -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+
+<script>
+    let dtKentongan = null;
+    const isUserAdminRole = {{ $isAdmin ? 'true' : 'false' }};
+
+    $(document).ready(function() {
+        initDataTableKentongan();
+    });
+
+    function initDataTableKentongan() {
+        if ($.fn.DataTable.isDataTable('#tabel-kentongan')) {
+            dtKentongan = $('#tabel-kentongan').DataTable();
+            return;
+        }
+
+        dtKentongan = $('#tabel-kentongan').DataTable({
+            responsive: true,
+            order: [[1, 'desc']], // Urutkan berdasarkan waktu kejadian terbaru
+            pageLength: 10,
+            lengthMenu: [5, 10, 25, 50, 100],
+            language: {
+                search: "🔍 Cari Kejadian:",
+                searchPlaceholder: "Kategori, catatan, koordinat...",
+                lengthMenu: "Tampilkan _MENU_ entri",
+                info: "Menampilkan _START_ sampai _END_ dari total _TOTAL_ kejadian",
+                infoEmpty: "Belum ada riwayat kentongan yang tercatat",
+                infoFiltered: "(disaring dari _MAX_ total data)",
+                zeroRecords: "Tidak ada riwayat kentongan yang cocok dengan pencarian",
+                paginate: {
+                    first: "Awal",
+                    last: "Akhir",
+                    next: "Berikutnya &rarr;",
+                    previous: "&larr; Sebelumnya"
+                }
+            }
+        });
+    }
+
+    // Tambah rekaman baru ke DataTable secara realtime saat tombol kentongan diklik
+    function tambahBarisKeDataTable(item) {
+        if (!dtKentongan) return;
+
+        let badgeClass = 'bg-amber-100 text-amber-800 border-amber-200';
+        if (item.kategori === 'pencurian') badgeClass = 'bg-rose-100 text-rose-800 border-rose-200';
+        else if (item.kategori === 'kebakaran') badgeClass = 'bg-orange-100 text-orange-800 border-orange-200';
+        else if (item.kategori === 'medis') badgeClass = 'bg-blue-100 text-blue-800 border-blue-200';
+
+        const rowData = [
+            `<span class="font-bold text-slate-400">#</span>`,
+            `<span class="font-bold text-slate-900 block row-waktu-text">${item.waktu}</span><span class="text-[10px] text-emerald-600 font-bold">Baru saja</span>`,
+            `<span class="row-kategori-badge inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-extrabold border ${badgeClass}"><span class="badge-icon">${item.kategori_icon}</span> <span class="badge-kategori-text">${item.kategori_badge}</span></span>`,
+            `<span class="row-catatan-text font-semibold text-slate-800 block max-w-xs">${escapeHtml(item.catatan || 'Sinyal bahaya kentongan online')}</span>`,
+            `<div class="space-y-1"><span class="font-mono text-[11px] text-slate-600 block">${item.koordinat_label}</span><a href="${item.google_maps_url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-[10px] transition border border-emerald-200 shadow-2xs">📍 Buka Google Maps</a></div>`,
+            `<span class="row-pelapor-text block font-bold text-slate-800 text-[11px]">${escapeHtml(item.pelapor)}</span><span class="inline-block mt-0.5 px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${item.status === 'selesai' ? 'bg-slate-100 text-slate-600' : (item.status === 'ditangani' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-700')}">${item.status || 'aktif'}</span>`
+        ];
+
+        if (isUserAdminRole) {
+            rowData.push(`
+                <div class="flex items-center justify-center gap-1">
+                    <button type="button" onclick="bukaModalEditKentongan(${item.id}, '${item.kategori}', '${escapeQuote(item.catatan || '')}', '${item.waktu}', '${escapeQuote(item.pelapor)}', '${item.koordinat_label}')" class="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 transition border border-amber-200 cursor-pointer" title="Edit">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                    </button>
+                    <button type="button" onclick="hapusRiwayatKentongan(${item.id}, '${item.waktu}')" class="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 transition border border-rose-200 cursor-pointer" title="Hapus">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                </div>
+            `);
+        }
+
+        const newRow = dtKentongan.row.add(rowData).draw(false).node();
+        $(newRow).attr('id', 'row-panic-' + item.id).addClass('bg-rose-50/50');
+        tampilkanTabelFeedback(`🚨 Kejadian baru berhasil dicatat dan ditambahkan ke tabel: "${item.kategori_badge}"`, 'success');
+    }
+
+    // Refresh Data Riwayat Kentongan via AJAX
+    function refreshTabelKentongan() {
+        fetch('{{ route("api.panic.list") }}')
+            .then(res => res.json())
+            .then(res => {
+                if (res.success && dtKentongan) {
+                    dtKentongan.clear();
+                    res.data.forEach((item, idx) => {
+                        let badgeClass = 'bg-amber-100 text-amber-800 border-amber-200';
+                        if (item.kategori === 'pencurian') badgeClass = 'bg-rose-100 text-rose-800 border-rose-200';
+                        else if (item.kategori === 'kebakaran') badgeClass = 'bg-orange-100 text-orange-800 border-orange-200';
+                        else if (item.kategori === 'medis') badgeClass = 'bg-blue-100 text-blue-800 border-blue-200';
+
+                        const rowData = [
+                            `<span class="font-bold text-slate-400">${idx + 1}</span>`,
+                            `<span class="font-bold text-slate-900 block row-waktu-text">${item.waktu}</span>`,
+                            `<span class="row-kategori-badge inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-extrabold border ${badgeClass}"><span class="badge-icon">${item.kategori_icon}</span> <span class="badge-kategori-text">${item.kategori_badge}</span></span>`,
+                            `<span class="row-catatan-text font-semibold text-slate-800 block max-w-xs">${escapeHtml(item.catatan)}</span>`,
+                            `<div class="space-y-1"><span class="font-mono text-[11px] text-slate-600 block">${item.koordinat_label}</span><a href="${item.google_maps_url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-[10px] transition border border-emerald-200 shadow-2xs">📍 Buka Google Maps</a></div>`,
+                            `<span class="row-pelapor-text block font-bold text-slate-800 text-[11px]">${escapeHtml(item.pelapor)}</span><span class="inline-block mt-0.5 px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${item.status === 'selesai' ? 'bg-slate-100 text-slate-600' : (item.status === 'ditangani' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-700')}">${item.status}</span>`
+                        ];
+
+                        if (isUserAdminRole) {
+                            rowData.push(`
+                                <div class="flex items-center justify-center gap-1">
+                                    <button type="button" onclick="bukaModalEditKentongan(${item.id}, '${item.kategori}', '${escapeQuote(item.catatan || '')}', '${item.waktu}', '${escapeQuote(item.pelapor)}', '${item.koordinat_label}')" class="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 transition border border-amber-200 cursor-pointer" title="Edit">
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                    </button>
+                                    <button type="button" onclick="hapusRiwayatKentongan(${item.id}, '${item.waktu}')" class="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 transition border border-rose-200 cursor-pointer" title="Hapus">
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                    </button>
+                                </div>
+                            `);
+                        }
+
+                        const rowNode = dtKentongan.row.add(rowData).node();
+                        $(rowNode).attr('id', 'row-panic-' + item.id);
+                    });
+                    dtKentongan.draw(false);
+                    tampilkanTabelFeedback('Data riwayat kentongan berhasil disegarkan.', 'success');
+                }
+            })
+            .catch(err => {
+                tampilkanTabelFeedback('Gagal memuat data: ' + err.message, 'error');
+            });
+    }
+
+    // Buka Modal Edit (Khusus Admin)
+    function bukaModalEditKentongan(id, kategori, catatan, waktu, pelapor, koordinat) {
+        document.getElementById('edit-modal-id').value = id;
+        document.getElementById('edit-modal-kategori').value = kategori;
+        document.getElementById('edit-modal-catatan').value = catatan;
+        document.getElementById('edit-modal-waktu').innerText = waktu;
+        document.getElementById('edit-modal-pelapor').innerText = pelapor;
+        document.getElementById('edit-modal-koordinat').innerText = koordinat;
+        openModal('modal-edit-kentongan');
+    }
+
+    // Submit Edit Kentongan via AJAX (Khusus Jenis Kejadian & Keterangan)
+    function submitEditKentongan(e) {
+        e.preventDefault();
+        const id = document.getElementById('edit-modal-id').value;
+        const kategori = document.getElementById('edit-modal-kategori').value;
+        const catatan = document.getElementById('edit-modal-catatan').value;
+        const btn = document.getElementById('btn-simpan-edit-kentongan');
+
+        btn.disabled = true;
+        btn.innerHTML = 'Menyimpan...';
+
+        fetch(`/api/panic/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                kategori: kategori,
+                catatan: catatan
+            })
+        })
+        .then(async (res) => {
+            const data = await res.json();
+            if (res.ok && data.success) {
+                closeModal('modal-edit-kentongan');
+                tampilkanTabelFeedback(`✅ ${data.message}`, 'success');
+
+                // Update teks di DOM row jika ada
+                const row = document.getElementById('row-panic-' + id);
+                if (row) {
+                    const badgeText = row.querySelector('.badge-kategori-text');
+                    const badgeIcon = row.querySelector('.badge-icon');
+                    const catatanEl = row.querySelector('.row-catatan-text');
+                    const badgeContainer = row.querySelector('.row-kategori-badge');
+
+                    if (badgeText) badgeText.innerText = data.alert.kategori_badge;
+                    if (badgeIcon) badgeIcon.innerText = data.alert.kategori_icon;
+                    if (catatanEl) catatanEl.innerText = data.alert.catatan;
+
+                    if (badgeContainer) {
+                        badgeContainer.className = 'row-kategori-badge inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-extrabold border';
+                        if (kategori === 'pencurian') badgeContainer.classList.add('bg-rose-100', 'text-rose-800', 'border-rose-200');
+                        else if (kategori === 'kebakaran') badgeContainer.classList.add('bg-orange-100', 'text-orange-800', 'border-orange-200');
+                        else if (kategori === 'medis') badgeContainer.classList.add('bg-blue-100', 'text-blue-800', 'border-blue-200');
+                        else badgeContainer.classList.add('bg-amber-100', 'text-amber-800', 'border-amber-200');
+                    }
+                }
+            } else {
+                alert('🚫 Gagal menyimpan: ' + (data.message || 'Terjadi kesalahan'));
+            }
+        })
+        .catch(err => {
+            alert('Kesalahan jaringan: ' + err.message);
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = 'Simpan Perubahan';
+        });
+    }
+
+    // Hapus Riwayat Kentongan (Khusus Admin)
+    function hapusRiwayatKentongan(id, waktu) {
+        if (!confirm(`Apakah Anda yakin ingin menghapus data riwayat kejadian tanggal ${waktu}? Tindakan ini tidak dapat dibatalkan.`)) {
+            return;
+        }
+
+        fetch(`/api/panic/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(async (res) => {
+            const data = await res.json();
+            if (res.ok && data.success) {
+                if (dtKentongan) {
+                    dtKentongan.row($('#row-panic-' + id)).remove().draw(false);
+                }
+                tampilkanTabelFeedback(`🗑️ ${data.message}`, 'success');
+            } else {
+                alert('🚫 Gagal menghapus: ' + (data.message || 'Terjadi kesalahan'));
+            }
+        })
+        .catch(err => {
+            alert('Kesalahan jaringan: ' + err.message);
+        });
+    }
+
+    function tampilkanTabelFeedback(pesan, tipe) {
+        const el = document.getElementById('tabel-panic-feedback');
+        if (!el) return;
+        el.innerText = pesan;
+        if (tipe === 'success') {
+            el.className = 'p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold text-center animate-in fade-in block';
+        } else {
+            el.className = 'p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-semibold text-center animate-in fade-in block';
+        }
+        setTimeout(() => { el.classList.add('hidden'); }, 5000);
+    }
+
+    function escapeHtml(text) {
+        return $('<div>').text(text).html();
+    }
+
+    function escapeQuote(str) {
+        return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
 </script>
 @endpush

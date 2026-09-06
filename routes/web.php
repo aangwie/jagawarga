@@ -3,7 +3,9 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardRwController;
 use App\Http\Controllers\JagaWargaController;
+use App\Http\Controllers\PanicAlertController;
 use App\Http\Controllers\RondaController;
+use App\Http\Controllers\SettingController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WargaController;
 use Illuminate\Support\Facades\Route;
@@ -20,6 +22,7 @@ Route::get('/warga', [WargaController::class, 'index'])->name('warga.index');
 
 // API Publik
 Route::post('/api/panic', [WargaController::class, 'storePanic'])->name('api.panic');
+Route::get('/api/panic/data', [PanicAlertController::class, 'listJson'])->name('api.panic.list');
 Route::post('/api/lapor', [WargaController::class, 'storeLaporan'])->name('api.lapor');
 Route::post('/api/buku-tamu', [WargaController::class, 'storeBukuTamu'])->name('api.buku_tamu');
 Route::get('/api/settings/public', function () {
@@ -68,9 +71,31 @@ Route::middleware(['auth', 'role:rt,rw,bhabinkamtibmas'])->group(function () {
     Route::post('/api/wa-reminder', [DashboardRwController::class, 'sendWhatsappReminder'])->name('api.wa_reminder');
     Route::post('/api/settings/geofence', [DashboardRwController::class, 'updateGeofenceSettings'])->name('api.settings.geofence');
 
+    // Manajemen Titik Rawan Patroli (Checkpoints)
+    Route::post('/api/checkpoints', [DashboardRwController::class, 'storeCheckpoint'])->name('api.checkpoints.store');
+    Route::put('/api/checkpoints/{id}', [DashboardRwController::class, 'updateCheckpoint'])->name('api.checkpoints.update');
+    Route::delete('/api/checkpoints/{id}', [DashboardRwController::class, 'deleteCheckpoint'])->name('api.checkpoints.delete');
+
     // Manajemen Pengguna (User Management CRUD)
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::post('/users', [UserController::class, 'store'])->name('users.store');
     Route::put('/users/{id}', [UserController::class, 'update'])->name('users.update');
     Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
+
+    // Pengaturan Sistem & Pembaruan Web (GitHub PAT, Symlink Storage)
+    Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
+    Route::post('/settings/github', [SettingController::class, 'saveGithub'])->name('settings.github.save');
+    Route::post('/settings/github/check', [SettingController::class, 'checkUpdate'])->name('settings.github.check');
+    Route::post('/settings/github/update', [SettingController::class, 'executeUpdate'])->name('settings.github.update');
+    Route::post('/settings/storage-link', [SettingController::class, 'generateStorageLink'])->name('settings.storage_link');
+
+    // Manajemen Riwayat Kentongan (Hanya Admin / Pengurus: Edit & Hapus)
+    Route::put('/api/panic/{id}', [PanicAlertController::class, 'update'])->name('api.panic.update');
+    Route::delete('/api/panic/{id}', [PanicAlertController::class, 'destroy'])->name('api.panic.destroy');
+
+    // Manajemen Titik Rawan Patroli (Checkpoints)
+    Route::post('/api/checkpoints', [DashboardRwController::class, 'storeCheckpoint'])->name('api.checkpoints.store');
+    Route::put('/api/checkpoints/{id}', [DashboardRwController::class, 'updateCheckpoint'])->name('api.checkpoints.update');
+    Route::delete('/api/checkpoints/{id}', [DashboardRwController::class, 'deleteCheckpoint'])->name('api.checkpoints.destroy');
 });
+

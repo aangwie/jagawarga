@@ -104,21 +104,38 @@
                         @endif
                     </div>
                     <div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex flex-wrap items-center gap-2">
                             <h4 class="text-sm font-bold text-slate-900">{{ $ckp->nama_titik }}</h4>
                             <span class="text-[10px] px-2 py-0.5 rounded-full font-bold {{ $isScanned ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' }}">
                                 {{ $isScanned ? 'Sudah Diperiksa' : 'Belum Diperiksa' }}
                             </span>
+                            <span class="text-[10px] px-2 py-0.5 rounded-md font-extrabold border {{ $ckp->badge_class }}">
+                                {{ $ckp->tingkat_kerawanan_badge }}
+                            </span>
                         </div>
                         <p class="text-xs text-slate-500 mt-0.5">{{ $ckp->deskripsi ?? 'Area pengawasan patroli malam.' }}</p>
-                        <div class="flex items-center gap-3 mt-1 text-[11px] text-slate-400 font-mono">
+                        <div class="flex flex-wrap items-center gap-3 mt-1 text-[11px] text-slate-400 font-mono">
                             <span>Kode: <strong>{{ $ckp->kode_qr }}</strong></span>
                             <span>RT {{ $ckp->rt }}</span>
+                            @if($ckp->latitude && $ckp->longitude)
+                            <a href="{{ $ckp->google_maps_url }}" target="_blank" class="text-blue-600 hover:text-blue-700 font-bold flex items-center gap-0.5 no-underline transition">
+                                📍 Navigasi Maps
+                            </a>
+                            @endif
                         </div>
                     </div>
                 </div>
 
                 <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                    @if($ckp->latitude && $ckp->longitude)
+                    <a href="{{ $ckp->google_maps_url }}" target="_blank" class="px-3 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold border border-blue-200 transition flex items-center gap-1.5 no-underline">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span>Maps</span>
+                    </a>
+                    @endif
                     <button onclick="verifikasiCheckpoint('{{ $ckp->kode_qr }}', '{{ $ckp->nama_titik }}')" class="px-3.5 py-2 rounded-xl {{ $isScanned ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-violet-600 hover:bg-violet-700' }} text-white text-xs font-bold shadow-xs transition cursor-pointer flex items-center gap-1.5">
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />

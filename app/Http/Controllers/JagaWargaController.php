@@ -23,11 +23,14 @@ class JagaWargaController extends Controller
     {
         // Ambil data dengan fallback jika database belum termigrasi
         try {
+            PanicAlert::ensureTableExists();
+            BukuTamu::ensureTableExists();
             $checkpoints = Checkpoint::orderBy('urutan_patroli')->get();
             $cctvs = CctvLingkungan::where('status', 'aktif')->get();
             $jadwalHariIni = JadwalRonda::with('user')->get();
             $laporanTerbaru = LaporanKejadian::with('user')->latest()->take(5)->get();
-            $panicTerbaru = PanicAlert::with('user')->latest()->take(3)->get();
+            $riwayatKentongan = PanicAlert::with('user')->latest()->get();
+            $panicTerbaru = $riwayatKentongan->take(3);
             $tamuTerbaru = BukuTamu::latest()->take(5)->get();
             $presensiTerbaru = PresensiRonda::with(['user', 'checkpoint'])->latest()->take(5)->get();
         } catch (\Throwable $e) {
@@ -109,11 +112,15 @@ class JagaWargaController extends Controller
                 ]
             ]);
 
+            $riwayatKentongan = collect([]);
             $panicTerbaru = collect([]);
             $tamuTerbaru = collect([
                 (object)[
                     'id' => 1,
                     'nama_tamu' => 'Ahmad Fauzi',
+                    'kewarganegaraan' => 'WNI',
+                    'nik' => '3302020202020005',
+                    'nomor_paspor' => null,
                     'alamat_asal' => 'Purwokerto, Jawa Tengah',
                     'warga_yang_dikunjungi' => 'Budi Santoso (RT 01)',
                     'status' => 'disetujui',
@@ -140,6 +147,7 @@ class JagaWargaController extends Controller
             'jadwalHariIni',
             'laporanTerbaru',
             'panicTerbaru',
+            'riwayatKentongan',
             'tamuTerbaru',
             'presensiTerbaru',
             'rwSetting'
@@ -192,27 +200,64 @@ class JagaWargaController extends Controller
         }
 
         try {
-            $user = User::where('role', 'warga')->first() ?? User::first();
-            $alert = PanicAlert::create([
-                'user_id' => $user?->id ?? 1,
-                'latitude' => $lat ?? $setting->center_latitude,
-                'longitude' => $lon ?? $setting->center_longitude,
-                'kategori' => $validated['kategori'] ?? 'pencurian',
-                'status' => 'aktif',
-                'catatan' => $validated['catatan'] ?? 'Sinyal darurat dikirim via Kentongan Online',
-            ]);
+            PanicAlert::ensureTableExists();
+
+            $user = auth()->user();
+            $userId = $user?->id;
+            $pelaporNama = $user ? $user->name : ($validated['pelapor_nama'] ?? 'Warga Lingkungan (Tamu)');
+
+            try {
+                $alert = PanicAlert::create([
+                    'user_id' => $userId,
+                    'pelapor_nama' => $pelaporNama,
+                    'latitude' => $lat,
+                    'longitude' => $lon,
+                    'kategori' => $validated['kategori'] ?? 'pencurian',
+                    'status' => 'aktif',
+                    'catatan' => $validated['catatan'] ?? ('Sinyal darurat dikirim via Kentongan Online (' . ($validated['kategori'] ?? 'pencurian') . ')'),
+                ]);
+            } catch (\Illuminate\Database\QueryException $qe) {
+                // Fallback darurat jika database masih memblokir NULL pada user_id
+                if ($userId === null) {
+                    $defaultUserId = User::where('role', 'warga')->value('id') ?? User::value('id');
+                    $alert = PanicAlert::create([
+                        'user_id' => $defaultUserId,
+                        'pelapor_nama' => $pelaporNama,
+                        'latitude' => $lat,
+                        'longitude' => $lon,
+                        'kategori' => $validated['kategori'] ?? 'pencurian',
+                        'status' => 'aktif',
+                        'catatan' => $validated['catatan'] ?? ('Sinyal darurat dikirim via Kentongan Online (' . ($validated['kategori'] ?? 'pencurian') . ')'),
+                    ]);
+                } else {
+                    throw $qe;
+                }
+            }
 
             return response()->json([
                 'success' => true,
                 'message' => 'Sinyal bahaya kentongan online berhasil disiarkan ke pos ronda dan HP warga!',
-                'alert_id' => $alert->id,
+                'alert' => [
+                    'id' => $alert->id,
+                    'waktu' => $alert->waktu_formatted,
+                    'raw_waktu' => $alert->created_at ? $alert->created_at->timestamp : time(),
+                    'kategori' => $alert->kategori,
+                    'kategori_badge' => $alert->kategori_badge,
+                    'kategori_icon' => $alert->kategori_icon,
+                    'catatan' => $alert->catatan,
+                    'latitude' => (float)$alert->latitude,
+                    'longitude' => (float)$alert->longitude,
+                    'koordinat_label' => number_format((float)$alert->latitude, 6) . ', ' . number_format((float)$alert->longitude, 6),
+                    'google_maps_url' => $alert->google_maps_url,
+                    'pelapor' => $alert->nama_pelapor,
+                    'status' => $alert->status,
+                ],
             ]);
         } catch (\Throwable $e) {
             return response()->json([
-                'success' => true,
-                'message' => 'Sinyal bahaya disimulasikan (Demo Mode). Alarm pos ronda diaktifkan!',
-                'demo' => true,
-            ]);
+                'success' => false,
+                'message' => 'Gagal mencatat sinyal bahaya: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
@@ -307,7 +352,9 @@ class JagaWargaController extends Controller
     {
         $validated = $request->validate([
             'nama_tamu' => 'required|string',
+            'kewarganegaraan' => 'required|string|in:WNI,WNA',
             'nik' => 'nullable|string',
+            'nomor_paspor' => 'nullable|string',
             'no_hp' => 'required|string',
             'alamat_asal' => 'required|string',
             'tujuan_kunjungan' => 'required|string',
@@ -317,10 +364,29 @@ class JagaWargaController extends Controller
             'tanggal_keluar' => 'nullable|date',
         ]);
 
+        // Validasi identitas berbasis kewarganegaraan
+        if ($validated['kewarganegaraan'] === 'WNI' && empty($validated['nik'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'NIK (Nomor Induk Kependudukan 16 digit) wajib diisi untuk warga negara Indonesia (WNI).',
+            ], 422);
+        }
+
+        if ($validated['kewarganegaraan'] === 'WNA' && empty($validated['nomor_paspor'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nomor Paspor / Dokumen Imigrasi wajib diisi untuk warga negara asing (WNA).',
+            ], 422);
+        }
+
         try {
+            BukuTamu::ensureTableExists();
+
             $tamu = BukuTamu::create([
                 'nama_tamu' => $validated['nama_tamu'],
-                'nik' => $validated['nik'],
+                'kewarganegaraan' => $validated['kewarganegaraan'],
+                'nik' => $validated['kewarganegaraan'] === 'WNI' ? $validated['nik'] : null,
+                'nomor_paspor' => $validated['kewarganegaraan'] === 'WNA' ? $validated['nomor_paspor'] : null,
                 'no_hp' => $validated['no_hp'],
                 'alamat_asal' => $validated['alamat_asal'],
                 'tujuan_kunjungan' => $validated['tujuan_kunjungan'],

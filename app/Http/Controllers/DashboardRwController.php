@@ -21,6 +21,10 @@ class DashboardRwController extends Controller
     public function index()
     {
         try {
+            Checkpoint::ensureTableExists();
+            PanicAlert::ensureTableExists();
+            BukuTamu::ensureTableExists();
+
             $totalWarga = User::where('role', 'warga')->count();
             $totalRonda = User::where('role', 'petugas_ronda')->count();
             $totalLaporan = LaporanKejadian::count();
@@ -245,5 +249,113 @@ class DashboardRwController extends Controller
             'message' => 'Pengingat WhatsApp berhasil dikirimkan ke ' . $validated['nomor_wa'] . '!',
             'konten_pesan' => $pesan,
         ]);
+    }
+
+    /**
+     * Simpan Titik Rawan Patroli Baru
+     */
+    public function storeCheckpoint(Request $request)
+    {
+        $validated = $request->validate([
+            'nama_titik' => 'required|string|max:255',
+            'latitude' => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
+            'deskripsi' => 'nullable|string',
+            'tingkat_kerawanan' => 'nullable|in:rawan,sedang,aman',
+            'rt' => 'nullable|string|max:10',
+            'urutan_patroli' => 'nullable|integer',
+        ]);
+
+        try {
+            Checkpoint::ensureTableExists();
+
+            $nextId = (Checkpoint::max('id') ?? 0) + 1;
+            $slug = \Illuminate\Support\Str::slug($validated['nama_titik']) ?: 'titik';
+            $kodeQr = 'JW-CKP-' . str_pad((string)$nextId, 3, '0', STR_PAD_LEFT) . '-' . substr(strtoupper($slug), 0, 8);
+
+            $checkpoint = Checkpoint::create([
+                'nama_titik' => $validated['nama_titik'],
+                'latitude' => $validated['latitude'],
+                'longitude' => $validated['longitude'],
+                'deskripsi' => $validated['deskripsi'] ?? null,
+                'tingkat_kerawanan' => $validated['tingkat_kerawanan'] ?? 'rawan',
+                'rt' => $validated['rt'] ?? '01',
+                'urutan_patroli' => $validated['urutan_patroli'] ?? $nextId,
+                'kode_qr' => $kodeQr,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Titik rawan patroli "' . $checkpoint->nama_titik . '" berhasil ditambahkan!',
+                'checkpoint' => $checkpoint,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyimpan titik rawan patroli: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Update Titik Rawan Patroli
+     */
+    public function updateCheckpoint(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'nama_titik' => 'required|string|max:255',
+            'latitude' => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
+            'deskripsi' => 'nullable|string',
+            'tingkat_kerawanan' => 'nullable|in:rawan,sedang,aman',
+            'rt' => 'nullable|string|max:10',
+            'urutan_patroli' => 'nullable|integer',
+        ]);
+
+        try {
+            $checkpoint = Checkpoint::findOrFail($id);
+            $checkpoint->update([
+                'nama_titik' => $validated['nama_titik'],
+                'latitude' => $validated['latitude'],
+                'longitude' => $validated['longitude'],
+                'deskripsi' => $validated['deskripsi'] ?? null,
+                'tingkat_kerawanan' => $validated['tingkat_kerawanan'] ?? $checkpoint->tingkat_kerawanan,
+                'rt' => $validated['rt'] ?? $checkpoint->rt,
+                'urutan_patroli' => $validated['urutan_patroli'] ?? $checkpoint->urutan_patroli,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data titik rawan patroli berhasil diperbarui!',
+                'checkpoint' => $checkpoint,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui titik rawan: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Hapus Titik Rawan Patroli
+     */
+    public function deleteCheckpoint($id)
+    {
+        try {
+            $checkpoint = Checkpoint::findOrFail($id);
+            $nama = $checkpoint->nama_titik;
+            $checkpoint->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Titik rawan patroli "' . $nama . '" berhasil dihapus.',
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus titik rawan: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }

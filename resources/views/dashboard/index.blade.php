@@ -42,6 +42,13 @@
                     </svg>
                     <span>Kelola Pengguna</span>
                 </a>
+                <a href="{{ route('settings.index') }}" class="px-3.5 py-2 rounded-xl bg-violet-700 hover:bg-violet-600 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md hover:shadow-violet-500/20 cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>Pengaturan Web</span>
+                </a>
                 <button onclick="window.print()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center gap-1.5 border border-slate-700 cursor-pointer">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
@@ -105,20 +112,28 @@
 
     </div>
 
-    <!-- SEKSI 1: PETA KERAWANAN (LEAFLET.JS + HEATMAP INCIDENTS) -->
+    <!-- SEKSI 1: PETA KERAWANAN (LEAFLET.JS + HEATMAP INCIDENTS) & MANAJEMEN TITIK RAWAN -->
     <section class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-sm space-y-4">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
             <div>
                 <div class="flex items-center gap-2">
                     <span class="px-2 py-0.5 rounded bg-rose-100 text-rose-800 text-[10px] font-extrabold uppercase">Heatmap Kerawanan</span>
                     <h2 class="text-base sm:text-lg font-bold text-slate-900">Pemetaan Wilayah & Titik Rawan Patroli</h2>
                 </div>
-                <p class="text-xs text-slate-500 mt-0.5">Gradien warna menunjukkan densitas insiden (Merah: Area Rawan, Hijau/Kuning: Sedang/Kondusif).</p>
+                <p class="text-xs text-slate-500 mt-0.5">Kelola titik lokasi rawan dan pantau secara real-time oleh petugas ronda poskamling.</p>
             </div>
-            <div class="flex items-center gap-2 text-xs">
-                <span class="inline-flex items-center gap-1 text-slate-600"><span class="w-3 h-3 rounded-full bg-rose-500"></span> Rawan</span>
-                <span class="inline-flex items-center gap-1 text-slate-600"><span class="w-3 h-3 rounded-full bg-amber-400"></span> Sedang</span>
-                <span class="inline-flex items-center gap-1 text-slate-600"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> Aman</span>
+            <div class="flex flex-wrap items-center gap-2.5">
+                <div class="hidden sm:flex items-center gap-2 text-xs border border-slate-200 px-2.5 py-1 rounded-xl bg-slate-50">
+                    <span class="inline-flex items-center gap-1 text-slate-600"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Rawan</span>
+                    <span class="inline-flex items-center gap-1 text-slate-600"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Sedang</span>
+                    <span class="inline-flex items-center gap-1 text-slate-600"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Aman</span>
+                </div>
+                <button onclick="openModalCheckpoint()" class="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-xs transition flex items-center gap-1.5 cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span>Tambah Titik Rawan</span>
+                </button>
             </div>
         </div>
 
@@ -127,22 +142,73 @@
             <div id="map-kerawanan"></div>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[11px] text-slate-600">
-            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                <span class="font-bold text-slate-900 block">Pos Utama RW 02</span>
-                <span class="text-[10px] text-slate-500">Pusat koordinasi & kentongan</span>
+        <!-- Helper Interaktif Klik Peta -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] bg-slate-50 border border-slate-200 px-3.5 py-2 rounded-xl text-slate-600">
+            <div class="flex items-center gap-1.5">
+                <span>📍</span>
+                <span><strong>Tips Presisi:</strong> Klik lokasi mana saja pada peta di atas untuk langsung menyalin koordinat ke formulir titik rawan patroli.</span>
             </div>
-            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                <span class="font-bold text-slate-900 block">Gapura Blok A</span>
-                <span class="text-[10px] text-slate-500">Portal tertutup jam 23:00</span>
+            <div id="map-click-preview" class="font-mono text-xs font-bold text-rose-600 hidden"></div>
+        </div>
+
+        <!-- Grid Daftar Titik Rawan Patroli Terdaftar -->
+        <div class="pt-1">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <span>Titik Pantau & Rawan Patroli Terdaftar</span>
+                    <span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-extrabold">{{ $checkpoints->count() }}</span>
+                </h3>
+                <span class="text-[11px] text-slate-400 hidden sm:inline">Dapat dipantau langsung oleh petugas patroli ronda</span>
             </div>
-            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                <span class="font-bold text-slate-900 block">Taman RT 02</span>
-                <span class="text-[10px] text-slate-500">Titik pantau terbuka</span>
-            </div>
-            <div class="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-900">
-                <span class="font-bold block">Gardu Gang Senggol</span>
-                <span class="text-[10px] text-rose-700">Area prioritas patroli ronda</span>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+                @forelse($checkpoints as $ckp)
+                <div class="p-3.5 rounded-2xl border transition flex flex-col justify-between space-y-3 hover:shadow-sm {{ $ckp->tingkat_kerawanan === 'rawan' ? 'bg-rose-50/40 border-rose-200/80' : ($ckp->tingkat_kerawanan === 'sedang' ? 'bg-amber-50/40 border-amber-200/80' : 'bg-emerald-50/40 border-emerald-200/80') }}">
+                    <div>
+                        <div class="flex items-start justify-between gap-2">
+                            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold border {{ $ckp->badge_class }}">
+                                {{ $ckp->tingkat_kerawanan_badge }}
+                            </span>
+                            <span class="text-[10px] font-bold text-slate-500 font-mono bg-white/70 px-1.5 py-0.5 rounded border border-slate-200/60">RT {{ $ckp->rt }}</span>
+                        </div>
+                        <h4 class="text-xs font-bold text-slate-900 mt-2.5 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full {{ $ckp->tingkat_kerawanan === 'rawan' ? 'bg-rose-500' : ($ckp->tingkat_kerawanan === 'sedang' ? 'bg-amber-500' : 'bg-emerald-500') }}"></span>
+                            <span>{{ $ckp->nama_titik }}</span>
+                        </h4>
+                        <p class="text-[11px] text-slate-600 mt-1 line-clamp-2 leading-relaxed">{{ $ckp->deskripsi ?: 'Area pantauan patroli rutin poskamling.' }}</p>
+                    </div>
+
+                    <div class="space-y-2 pt-2 border-t border-slate-200/60 text-xs">
+                        <div class="flex items-center justify-between text-[10px] font-mono text-slate-500">
+                            <span>{{ number_format($ckp->latitude, 5) }}, {{ number_format($ckp->longitude, 5) }}</span>
+                            <a href="{{ $ckp->google_maps_url }}" target="_blank" class="text-blue-600 hover:text-blue-700 font-bold flex items-center gap-0.5 transition">
+                                <span>Buka Maps</span>
+                                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                            </a>
+                        </div>
+                        <div class="flex items-center justify-end gap-1.5 pt-1">
+                            <button onclick='editCheckpoint(@json($ckp))' class="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-100 text-slate-700 text-[11px] font-bold border border-slate-200 shadow-2xs transition cursor-pointer flex items-center gap-1">
+                                <svg class="w-3 h-3 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                                <span>Edit</span>
+                            </button>
+                            <button onclick="hapusCheckpoint({{ $ckp->id }}, '{{ addslashes($ckp->nama_titik) }}')" class="px-2.5 py-1 rounded-lg bg-white hover:bg-rose-50 text-rose-600 text-[11px] font-bold border border-rose-200 shadow-2xs transition cursor-pointer flex items-center gap-1">
+                                <svg class="w-3 h-3 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                <span>Hapus</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                @empty
+                <div class="col-span-full p-6 text-center text-xs text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                    Belum ada titik rawan patroli yang ditambahkan. Silakan klik tombol "Tambah Titik Rawan" di atas.
+                </div>
+                @endforelse
             </div>
         </div>
     </section>
@@ -367,6 +433,119 @@
         </form>
     </div>
 </div>
+
+<!-- MODAL INPUT / EDIT TITIK RAWAN PATROLI -->
+<div id="modal-checkpoint" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-6 space-y-4 shadow-2xl border border-slate-100 max-h-[92vh] overflow-y-auto">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center text-sm font-bold">
+                    📍
+                </div>
+                <div>
+                    <h3 id="modal-checkpoint-title" class="font-bold text-sm text-slate-900">Tambah Titik Rawan Patroli</h3>
+                    <p class="text-[11px] text-slate-500">Titik lokasi akan tersinkronisasi dan dipantau langsung oleh Petugas Ronda.</p>
+                </div>
+            </div>
+            <button onclick="closeModalCheckpoint()" class="text-slate-400 hover:text-slate-700 text-lg leading-none cursor-pointer">&times;</button>
+        </div>
+
+        <form onsubmit="submitFormCheckpoint(event)" class="space-y-3.5 text-xs">
+            <input type="hidden" id="checkpoint-id" value="">
+
+            <!-- Nama Lokasi -->
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">
+                    Nama Lokasi <span class="text-rose-500">*</span>
+                </label>
+                <input type="text" id="checkpoint-nama" required placeholder="Contoh: Gardu Gang Senggol, Gapura Barat RT 02, Jembatan Rel" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 text-xs font-semibold text-slate-800">
+            </div>
+
+            <!-- Tingkat Kerawanan & Wilayah RT -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">
+                        Tingkat Kerawanan <span class="text-rose-500">*</span>
+                    </label>
+                    <select id="checkpoint-tingkat" required class="w-full px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-rose-500 text-xs font-semibold text-slate-800 bg-white">
+                        <option value="rawan">🔴 Titik Rawan Prioritas (Wajib Pantau)</option>
+                        <option value="sedang">🟡 Kerawanan Sedang</option>
+                        <option value="aman">🟢 Aman / Pos Pantau</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">
+                        Wilayah RT
+                    </label>
+                    <input type="text" id="checkpoint-rt" value="01" placeholder="Contoh: 01 atau 02" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-rose-500 text-xs font-semibold text-slate-800">
+                </div>
+            </div>
+
+            <!-- Koordinat Latitude & Longitude -->
+            <div>
+                <div class="flex items-center justify-between mb-1">
+                    <label class="block font-bold text-slate-700">
+                        Koordinat Lokasi (Latitude & Longitude) <span class="text-rose-500">*</span>
+                    </label>
+                    <div class="flex items-center gap-1.5">
+                        <button type="button" onclick="ambilLokasiCheckpointGPS()" class="px-2 py-0.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition cursor-pointer flex items-center gap-1">
+                            <span>📍 GPS Saya</span>
+                        </button>
+                        <button type="button" onclick="setCheckpointFromRwCenter()" class="px-2 py-0.5 rounded-lg bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-200 text-[10px] font-bold transition cursor-pointer flex items-center gap-1">
+                            <span>🎯 Pusat RW</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <input type="number" step="any" id="checkpoint-lat" required placeholder="Latitude (mis: -6.208800)" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-rose-500 text-xs font-mono font-medium text-slate-800">
+                        <span class="text-[10px] text-slate-400 block mt-0.5">Latitude</span>
+                    </div>
+                    <div>
+                        <input type="number" step="any" id="checkpoint-lng" required placeholder="Longitude (mis: 106.845600)" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-rose-500 text-xs font-mono font-medium text-slate-800">
+                        <span class="text-[10px] text-slate-400 block mt-0.5">Longitude</span>
+                    </div>
+                </div>
+                <p class="text-[10px] text-slate-500 mt-1">💡 Anda juga dapat mengklik langsung lokasi mana saja di peta dashboard untuk otomatis menyalin koordinat ini.</p>
+            </div>
+
+            <!-- Keterangan / Instruksi Patroli -->
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">
+                    Keterangan / Catatan Patroli
+                </label>
+                <textarea id="checkpoint-deskripsi" rows="3" placeholder="Contoh: Sering terjadi tindak mencurigakan saat dini hari. Petugas patroli wajib pantau berkala setiap jam 01.00 dan 03.00 WIB." class="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-rose-500 text-xs leading-relaxed text-slate-800"></textarea>
+                <span class="text-[10px] text-slate-400">Instruksi ini akan dibaca oleh petugas ronda saat patroli malam di pos masing-masing.</span>
+            </div>
+
+            <!-- Urutan Patroli (Optional) -->
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">
+                    Urutan Rute Patroli
+                </label>
+                <input type="number" id="checkpoint-urutan" min="1" value="1" class="w-24 px-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:border-rose-500 text-xs font-semibold text-slate-800">
+            </div>
+
+            <!-- Feedback Message -->
+            <div id="checkpoint-modal-feedback" class="hidden p-3 rounded-2xl text-xs font-semibold text-center"></div>
+
+            <!-- Tombol Aksi -->
+            <div class="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+                <button type="button" onclick="closeModalCheckpoint()" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 transition cursor-pointer">
+                    Batal
+                </button>
+                <button type="submit" id="btn-submit-checkpoint" class="px-5 py-2 rounded-xl bg-rose-600 text-white font-bold hover:bg-rose-700 transition cursor-pointer flex items-center gap-1.5 shadow-sm">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>Simpan Titik Rawan</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -386,19 +565,44 @@
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
-    // Titik Checkpoint Patroli Markers
+    // Titik Checkpoint Patroli Markers (Color-Coded by Tingkat Kerawanan)
     const checkpointsData = @json($checkpoints);
     checkpointsData.forEach(ckp => {
         if (ckp.latitude && ckp.longitude) {
-            const marker = L.marker([ckp.latitude, ckp.longitude]).addTo(map);
+            const colorMap = { rawan: '#ef4444', sedang: '#f59e0b', aman: '#10b981' };
+            const labelMap = { rawan: '🔴 Rawan', sedang: '🟡 Sedang', aman: '🟢 Aman' };
+            const markerColor = colorMap[ckp.tingkat_kerawanan] || '#ef4444';
+            const ckpIcon = L.divIcon({
+                html: `<div style="background: ${markerColor}; width: 14px; height: 14px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 8px ${markerColor}88;"></div>`,
+                iconSize: [14, 14],
+                iconAnchor: [7, 7],
+                className: ''
+            });
+            const marker = L.marker([ckp.latitude, ckp.longitude], { icon: ckpIcon }).addTo(map);
             marker.bindPopup(`
-                <div style="font-family: sans-serif; font-size: 12px;">
-                    <strong style="color: #047857;">${ckp.nama_titik}</strong><br>
-                    <span style="color: #6b7280;">RT ${ckp.rt}</span><br>
-                    <span style="font-family: monospace; font-size: 10px; background: #ede9fe; color: #6d28d9; padding: 2px 4px; border-radius: 4px;">${ckp.kode_qr || 'POS RW'}</span>
+                <div style="font-family: sans-serif; font-size: 12px; min-width: 160px;">
+                    <strong style="color: ${markerColor};">${ckp.nama_titik}</strong><br>
+                    <span style="font-size: 10px; color: #6b7280;">RT ${ckp.rt} — ${labelMap[ckp.tingkat_kerawanan] || 'Rawan'}</span><br>
+                    <span style="font-size: 10px; color: #94a3b8;">${ckp.deskripsi || 'Area patroli rutin'}</span><br>
+                    <a href="https://www.google.com/maps?q=${ckp.latitude},${ckp.longitude}" target="_blank" style="font-size: 10px; color: #2563eb; text-decoration: none;">📍 Buka Google Maps</a>
                 </div>
             `);
         }
+    });
+
+    // MAP CLICK → Isi koordinat ke Modal Checkpoint
+    map.on('click', function(e) {
+        const lat = e.latlng.lat.toFixed(8);
+        const lng = e.latlng.lng.toFixed(8);
+        document.getElementById('checkpoint-lat').value = lat;
+        document.getElementById('checkpoint-lng').value = lng;
+        const preview = document.getElementById('map-click-preview');
+        preview.textContent = `Koordinat dipilih: ${lat}, ${lng}`;
+        preview.classList.remove('hidden');
+        // Flash highlight
+        preview.style.transition = 'opacity 0.2s';
+        preview.style.opacity = '1';
+        setTimeout(() => { preview.style.opacity = '0.7'; }, 1500);
     });
 
     // Layer Heatmap Insiden (Leaflet.heat)
@@ -653,5 +857,147 @@
             feedback.className = 'p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-semibold text-center animate-in fade-in';
         });
     }
+
+    // ====== MANAJEMEN TITIK RAWAN PATROLI (CHECKPOINT CRUD) ======
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    function openModalCheckpoint() {
+        document.getElementById('checkpoint-id').value = '';
+        document.getElementById('checkpoint-nama').value = '';
+        document.getElementById('checkpoint-lat').value = '';
+        document.getElementById('checkpoint-lng').value = '';
+        document.getElementById('checkpoint-deskripsi').value = '';
+        document.getElementById('checkpoint-tingkat').value = 'rawan';
+        document.getElementById('checkpoint-rt').value = '01';
+        document.getElementById('checkpoint-urutan').value = '1';
+        document.getElementById('modal-checkpoint-title').textContent = 'Tambah Titik Rawan Patroli';
+        document.getElementById('btn-submit-checkpoint').querySelector('span').textContent = 'Simpan Titik Rawan';
+        const fb = document.getElementById('checkpoint-modal-feedback');
+        fb.classList.add('hidden');
+        fb.innerHTML = '';
+        document.getElementById('modal-checkpoint').classList.remove('hidden');
+    }
+
+    function closeModalCheckpoint() {
+        document.getElementById('modal-checkpoint').classList.add('hidden');
+    }
+
+    function editCheckpoint(ckp) {
+        document.getElementById('checkpoint-id').value = ckp.id;
+        document.getElementById('checkpoint-nama').value = ckp.nama_titik;
+        document.getElementById('checkpoint-lat').value = ckp.latitude;
+        document.getElementById('checkpoint-lng').value = ckp.longitude;
+        document.getElementById('checkpoint-deskripsi').value = ckp.deskripsi || '';
+        document.getElementById('checkpoint-tingkat').value = ckp.tingkat_kerawanan || 'rawan';
+        document.getElementById('checkpoint-rt').value = ckp.rt || '01';
+        document.getElementById('checkpoint-urutan').value = ckp.urutan_patroli || 1;
+        document.getElementById('modal-checkpoint-title').textContent = 'Edit Titik Rawan: ' + ckp.nama_titik;
+        document.getElementById('btn-submit-checkpoint').querySelector('span').textContent = 'Simpan Perubahan';
+        const fb = document.getElementById('checkpoint-modal-feedback');
+        fb.classList.add('hidden');
+        fb.innerHTML = '';
+        document.getElementById('modal-checkpoint').classList.remove('hidden');
+    }
+
+    function ambilLokasiCheckpointGPS() {
+        if (!navigator.geolocation) {
+            alert('GPS tidak tersedia di perangkat ini.');
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                document.getElementById('checkpoint-lat').value = pos.coords.latitude.toFixed(8);
+                document.getElementById('checkpoint-lng').value = pos.coords.longitude.toFixed(8);
+            },
+            (err) => {
+                alert('Gagal mendeteksi GPS: ' + err.message);
+            },
+            { enableHighAccuracy: true, timeout: 8000 }
+        );
+    }
+
+    function setCheckpointFromRwCenter() {
+        document.getElementById('checkpoint-lat').value = defaultLat.toFixed(8);
+        document.getElementById('checkpoint-lng').value = defaultLng.toFixed(8);
+    }
+
+    function submitFormCheckpoint(e) {
+        e.preventDefault();
+        const feedback = document.getElementById('checkpoint-modal-feedback');
+        const checkpointId = document.getElementById('checkpoint-id').value;
+        const isEdit = checkpointId !== '';
+
+        const payload = {
+            nama_titik: document.getElementById('checkpoint-nama').value,
+            latitude: parseFloat(document.getElementById('checkpoint-lat').value),
+            longitude: parseFloat(document.getElementById('checkpoint-lng').value),
+            deskripsi: document.getElementById('checkpoint-deskripsi').value,
+            tingkat_kerawanan: document.getElementById('checkpoint-tingkat').value,
+            rt: document.getElementById('checkpoint-rt').value,
+            urutan_patroli: parseInt(document.getElementById('checkpoint-urutan').value) || 1,
+        };
+
+        feedback.innerHTML = '⏳ Menyimpan data titik rawan patroli ke database...';
+        feedback.className = 'p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-semibold text-center';
+        feedback.classList.remove('hidden');
+
+        const url = isEdit ? `/api/checkpoints/${checkpointId}` : '/api/checkpoints';
+        const method = isEdit ? 'PUT' : 'POST';
+
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(async (res) => {
+            const data = await res.json();
+            if (res.ok && data.success) {
+                feedback.innerHTML = `✅ <strong>${data.message}</strong>`;
+                feedback.className = 'p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold text-center';
+                setTimeout(() => {
+                    closeModalCheckpoint();
+                    window.location.reload();
+                }, 1200);
+            } else {
+                feedback.innerHTML = `🚫 <strong>GAGAL:</strong> ${data.message || 'Terjadi kesalahan saat menyimpan.'}`;
+                feedback.className = 'p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-semibold text-center';
+            }
+        })
+        .catch((err) => {
+            feedback.innerHTML = `🚫 <strong>KONEKSI GAGAL:</strong> ${err.message || 'Network Error'}`;
+            feedback.className = 'p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-semibold text-center';
+        });
+    }
+
+    function hapusCheckpoint(id, nama) {
+        if (!confirm(`Yakin ingin menghapus titik rawan patroli "${nama}"?\n\nTitik ini akan dihapus dari database dan tidak lagi dipantau oleh petugas ronda.`)) {
+            return;
+        }
+
+        fetch(`/api/checkpoints/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken
+            }
+        })
+        .then(async (res) => {
+            const data = await res.json();
+            if (res.ok && data.success) {
+                alert('✅ ' + data.message);
+                window.location.reload();
+            } else {
+                alert('🚫 Gagal menghapus: ' + (data.message || 'Terjadi kesalahan.'));
+            }
+        })
+        .catch((err) => {
+            alert('🚫 Koneksi gagal: ' + (err.message || 'Network Error'));
+        });
+    }
+
 </script>
 @endpush

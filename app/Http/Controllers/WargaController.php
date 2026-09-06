@@ -8,6 +8,7 @@ use App\Models\PanicAlert;
 use App\Models\RwSetting;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class WargaController extends Controller
@@ -99,27 +100,64 @@ class WargaController extends Controller
         }
 
         try {
-            $user = User::where('role', 'warga')->first() ?? User::first();
-            $alert = PanicAlert::create([
-                'user_id' => $user?->id ?? 1,
-                'latitude' => $lat ?? $setting->center_latitude,
-                'longitude' => $lon ?? $setting->center_longitude,
-                'kategori' => $validated['kategori'] ?? 'pencurian',
-                'status' => 'aktif',
-                'catatan' => $validated['catatan'] ?? 'Sinyal darurat dikirim via Kentongan Online Warga',
-            ]);
+            PanicAlert::ensureTableExists();
+
+            $user = Auth::user();
+            $userId = $user?->id;
+            $pelaporNama = $user ? $user->name : 'Warga Lingkungan (Tamu)';
+
+            try {
+                $alert = PanicAlert::create([
+                    'user_id' => $userId,
+                    'pelapor_nama' => $pelaporNama,
+                    'latitude' => $lat,
+                    'longitude' => $lon,
+                    'kategori' => $validated['kategori'] ?? 'pencurian',
+                    'status' => 'aktif',
+                    'catatan' => $validated['catatan'] ?? ('Sinyal darurat dikirim via Kentongan Online (' . ($validated['kategori'] ?? 'pencurian') . ')'),
+                ]);
+            } catch (\Illuminate\Database\QueryException $qe) {
+                // Fallback darurat jika database masih memblokir NULL pada user_id
+                if ($userId === null) {
+                    $defaultUserId = User::where('role', 'warga')->value('id') ?? User::value('id');
+                    $alert = PanicAlert::create([
+                        'user_id' => $defaultUserId,
+                        'pelapor_nama' => $pelaporNama,
+                        'latitude' => $lat,
+                        'longitude' => $lon,
+                        'kategori' => $validated['kategori'] ?? 'pencurian',
+                        'status' => 'aktif',
+                        'catatan' => $validated['catatan'] ?? ('Sinyal darurat dikirim via Kentongan Online (' . ($validated['kategori'] ?? 'pencurian') . ')'),
+                    ]);
+                } else {
+                    throw $qe;
+                }
+            }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Sinyal kentongan darurat berhasil disiarkan ke seluruh pos ronda & pengurus RW!',
-                'alert' => $alert,
+                'message' => 'Sinyal kentongan darurat berhasil dicatat dan disiarkan ke seluruh pos ronda & pengurus RW!',
+                'alert' => [
+                    'id' => $alert->id,
+                    'waktu' => $alert->waktu_formatted,
+                    'raw_waktu' => $alert->created_at ? $alert->created_at->timestamp : time(),
+                    'kategori' => $alert->kategori,
+                    'kategori_badge' => $alert->kategori_badge,
+                    'kategori_icon' => $alert->kategori_icon,
+                    'catatan' => $alert->catatan,
+                    'latitude' => (float)$alert->latitude,
+                    'longitude' => (float)$alert->longitude,
+                    'koordinat_label' => number_format((float)$alert->latitude, 6) . ', ' . number_format((float)$alert->longitude, 6),
+                    'google_maps_url' => $alert->google_maps_url,
+                    'pelapor' => $alert->nama_pelapor,
+                    'status' => $alert->status,
+                ],
             ]);
         } catch (\Throwable $e) {
             return response()->json([
-                'success' => true,
-                'message' => 'Sinyal darurat disiarkan (Demo Mode). Alarm pos ronda RW 02 aktif!',
-                'demo' => true,
-            ]);
+                'success' => false,
+                'message' => 'Gagal mencatat sinyal darurat: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
@@ -174,7 +212,9 @@ class WargaController extends Controller
     {
         $validated = $request->validate([
             'nama_tamu' => 'required|string|max:100',
+            'kewarganegaraan' => 'required|string|in:WNI,WNA',
             'nik' => 'nullable|string|max:20',
+            'nomor_paspor' => 'nullable|string|max:50',
             'no_hp' => 'required|string|max:20',
             'alamat_asal' => 'required|string',
             'tujuan_kunjungan' => 'required|string',
@@ -184,10 +224,29 @@ class WargaController extends Controller
             'tanggal_keluar' => 'nullable|date',
         ]);
 
+        // Validasi identitas berbasis kewarganegaraan
+        if ($validated['kewarganegaraan'] === 'WNI' && empty($validated['nik'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'NIK (Nomor Induk Kependudukan 16 digit) wajib diisi untuk warga negara Indonesia (WNI).',
+            ], 422);
+        }
+
+        if ($validated['kewarganegaraan'] === 'WNA' && empty($validated['nomor_paspor'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nomor Paspor / Dokumen Imigrasi wajib diisi untuk warga negara asing (WNA).',
+            ], 422);
+        }
+
         try {
+            BukuTamu::ensureTableExists();
+
             $tamu = BukuTamu::create([
                 'nama_tamu' => $validated['nama_tamu'],
-                'nik' => $validated['nik'],
+                'kewarganegaraan' => $validated['kewarganegaraan'],
+                'nik' => $validated['kewarganegaraan'] === 'WNI' ? $validated['nik'] : null,
+                'nomor_paspor' => $validated['kewarganegaraan'] === 'WNA' ? $validated['nomor_paspor'] : null,
                 'no_hp' => $validated['no_hp'],
                 'alamat_asal' => $validated['alamat_asal'],
                 'tujuan_kunjungan' => $validated['tujuan_kunjungan'],
