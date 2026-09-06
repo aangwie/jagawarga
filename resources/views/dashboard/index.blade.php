@@ -163,25 +163,33 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
                 @forelse($checkpoints as $ckp)
-                <div class="p-3.5 rounded-2xl border transition flex flex-col justify-between space-y-3 hover:shadow-sm {{ $ckp->tingkat_kerawanan === 'rawan' ? 'bg-rose-50/40 border-rose-200/80' : ($ckp->tingkat_kerawanan === 'sedang' ? 'bg-amber-50/40 border-amber-200/80' : 'bg-emerald-50/40 border-emerald-200/80') }}">
+                @php
+                    $ckpTingkat = $ckp->tingkat_kerawanan ?? 'rawan';
+                    $ckpBadge = $ckp->tingkat_kerawanan_badge ?? ($ckpTingkat === 'aman' ? '🟢 Aman / Pos Pantau' : ($ckpTingkat === 'sedang' ? '🟡 Kerawanan Sedang' : '🔴 Titik Rawan Prioritas'));
+                    $ckpClass = $ckp->badge_class ?? ($ckpTingkat === 'aman' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : ($ckpTingkat === 'sedang' ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-rose-100 text-rose-800 border-rose-200'));
+                    $ckpMapsUrl = $ckp->google_maps_url ?? (($ckp->latitude && $ckp->longitude) ? "https://www.google.com/maps?q={$ckp->latitude},{$ckp->longitude}" : '#');
+                    $ckpDeskripsi = $ckp->deskripsi ?? 'Area pantauan patroli rutin poskamling.';
+                    $ckpRt = $ckp->rt ?? '01';
+                @endphp
+                <div class="p-3.5 rounded-2xl border transition flex flex-col justify-between space-y-3 hover:shadow-sm {{ $ckpTingkat === 'rawan' ? 'bg-rose-50/40 border-rose-200/80' : ($ckpTingkat === 'sedang' ? 'bg-amber-50/40 border-amber-200/80' : 'bg-emerald-50/40 border-emerald-200/80') }}">
                     <div>
                         <div class="flex items-start justify-between gap-2">
-                            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold border {{ $ckp->badge_class }}">
-                                {{ $ckp->tingkat_kerawanan_badge }}
+                            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold border {{ $ckpClass }}">
+                                {{ $ckpBadge }}
                             </span>
-                            <span class="text-[10px] font-bold text-slate-500 font-mono bg-white/70 px-1.5 py-0.5 rounded border border-slate-200/60">RT {{ $ckp->rt }}</span>
+                            <span class="text-[10px] font-bold text-slate-500 font-mono bg-white/70 px-1.5 py-0.5 rounded border border-slate-200/60">RT {{ $ckpRt }}</span>
                         </div>
                         <h4 class="text-xs font-bold text-slate-900 mt-2.5 flex items-center gap-1.5">
-                            <span class="w-2 h-2 rounded-full {{ $ckp->tingkat_kerawanan === 'rawan' ? 'bg-rose-500' : ($ckp->tingkat_kerawanan === 'sedang' ? 'bg-amber-500' : 'bg-emerald-500') }}"></span>
+                            <span class="w-2 h-2 rounded-full {{ $ckpTingkat === 'rawan' ? 'bg-rose-500' : ($ckpTingkat === 'sedang' ? 'bg-amber-500' : 'bg-emerald-500') }}"></span>
                             <span>{{ $ckp->nama_titik }}</span>
                         </h4>
-                        <p class="text-[11px] text-slate-600 mt-1 line-clamp-2 leading-relaxed">{{ $ckp->deskripsi ?: 'Area pantauan patroli rutin poskamling.' }}</p>
+                        <p class="text-[11px] text-slate-600 mt-1 line-clamp-2 leading-relaxed">{{ $ckpDeskripsi }}</p>
                     </div>
 
                     <div class="space-y-2 pt-2 border-t border-slate-200/60 text-xs">
                         <div class="flex items-center justify-between text-[10px] font-mono text-slate-500">
                             <span>{{ number_format($ckp->latitude, 5) }}, {{ number_format($ckp->longitude, 5) }}</span>
-                            <a href="{{ $ckp->google_maps_url }}" target="_blank" class="text-blue-600 hover:text-blue-700 font-bold flex items-center gap-0.5 transition">
+                            <a href="{{ $ckpMapsUrl }}" target="_blank" class="text-blue-600 hover:text-blue-700 font-bold flex items-center gap-0.5 transition">
                                 <span>Buka Maps</span>
                                 <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -303,14 +311,15 @@
     </section>
 
     <!-- SEKSI 4: PENGATURAN TITIK PUSAT & RADIUS GEOFENCE TOMBOL PANIC -->
+    <!-- SEKSI 4: PENGATURAN TITIK PUSAT & RADIUS GEOFENCE DENGAN PETA INTERAKTIF -->
     <section class="bg-white rounded-3xl p-5 sm:p-6 border-2 border-violet-200/80 shadow-sm space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-violet-100 pb-3">
             <div>
                 <div class="flex items-center gap-2">
-                    <span class="px-2 py-0.5 rounded bg-violet-100 text-violet-800 text-[10px] font-extrabold uppercase">Geofencing RW</span>
+                    <span class="px-2 py-0.5 rounded bg-violet-100 text-violet-800 text-[10px] font-extrabold uppercase">Geofencing Terintegrasi</span>
                     <h2 class="text-base sm:text-lg font-bold text-slate-900">Pengaturan Titik Pusat & Radius Geofence</h2>
                 </div>
-                <p class="text-xs text-slate-500 mt-0.5">Tentukan koordinat titik pusat (Pos Ronda RW) dan jarak radius tombol panic aktif. Warga di luar radius ini tidak dapat mengaktifkan tombol darurat.</p>
+                <p class="text-xs text-slate-500 mt-0.5">Tentukan koordinat titik pusat dan jarak radius tombol panic. Semua nilai dapat diisi otomatis dengan mengklik peta atau menggeser marker.</p>
             </div>
             <div class="flex items-center gap-2 text-xs font-bold">
                 <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200">
@@ -320,67 +329,109 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <!-- Form Input Geofence -->
-            <div class="space-y-4">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            <!-- Form Input Geofence (5 Kolom) -->
+            <div class="lg:col-span-5 space-y-3.5">
                 <form id="form-geofence" onsubmit="submitGeofenceSettings(event)" class="space-y-3">
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Latitude Pusat</label>
-                            <input type="number" step="0.000001" id="geofence-lat" value="{{ $rwSetting->center_latitude ?? -6.208800 }}" required class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-violet-500 font-mono">
+                    <div class="bg-violet-50/50 border border-violet-200/80 rounded-2xl p-3.5 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-violet-900 flex items-center gap-1.5">
+                                <span>🎯</span> Titik Koordinat Pusat (Pos RW)
+                            </span>
+                            <span class="text-[10px] text-violet-600 font-semibold bg-violet-100/70 px-2 py-0.5 rounded-md">Bisa klik peta</span>
                         </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Longitude Pusat</label>
-                            <input type="number" step="0.000001" id="geofence-lng" value="{{ $rwSetting->center_longitude ?? 106.845600 }}" required class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-violet-500 font-mono">
+                        <div class="grid grid-cols-2 gap-2.5">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-600 mb-1">Latitude</label>
+                                <input type="number" step="0.000001" id="geofence-lat" value="{{ $rwSetting->center_latitude ?? -6.208800 }}" required oninput="syncInputsToMap()" class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-violet-500 font-mono bg-white">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-600 mb-1">Longitude</label>
+                                <input type="number" step="0.000001" id="geofence-lng" value="{{ $rwSetting->center_longitude ?? 106.845600 }}" required oninput="syncInputsToMap()" class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-violet-500 font-mono bg-white">
+                            </div>
                         </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Radius Tombol Panic (meter)</label>
-                        <div class="flex items-center gap-3">
-                            <input type="range" id="geofence-radius-slider" min="50" max="2000" step="50" value="{{ $rwSetting->panic_radius_meters ?? 300 }}" oninput="updateRadiusPreview(this.value)" class="flex-1 accent-violet-600 cursor-pointer">
-                            <input type="number" id="geofence-radius" min="50" max="10000" value="{{ $rwSetting->panic_radius_meters ?? 300 }}" required oninput="document.getElementById('geofence-radius-slider').value = this.value; updateRadiusPreview(this.value)" class="w-24 text-xs px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-violet-500 font-mono text-center font-bold">
-                            <span class="text-xs text-slate-500 font-bold">meter</span>
-                        </div>
-                    </div>
-
-                    <div class="flex items-center gap-2">
-                        <button type="button" onclick="ambilLokasiAdminGPS()" class="px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 border border-slate-200 text-xs font-bold transition cursor-pointer flex items-center gap-1.5">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <button type="button" onclick="ambilLokasiAdminGPS()" class="w-full py-2 px-3 rounded-xl bg-white hover:bg-violet-100 text-violet-700 border border-violet-200 text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>
-                            <span>Deteksi Lokasi GPS Saya</span>
-                        </button>
-                        <button type="submit" class="flex-1 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-extrabold shadow-md shadow-violet-600/20 transition cursor-pointer">
-                            💾 Simpan Pengaturan Geofence
+                            <span>Gunakan Lokasi GPS Saya Saat Ini</span>
                         </button>
                     </div>
+
+                    <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                                <span>📏</span> Radius Tombol Panic
+                            </label>
+                            <span class="text-[10px] text-slate-500 font-semibold bg-slate-200/60 px-2 py-0.5 rounded-md">Bisa tarik di peta</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input type="range" id="geofence-radius-slider" min="50" max="2000" step="25" value="{{ $rwSetting->panic_radius_meters ?? 300 }}" oninput="updateRadiusPreview(this.value)" class="flex-1 accent-violet-600 cursor-pointer">
+                            <input type="number" id="geofence-radius" min="50" max="10000" value="{{ $rwSetting->panic_radius_meters ?? 300 }}" required oninput="document.getElementById('geofence-radius-slider').value = this.value; updateRadiusPreview(this.value)" class="w-20 text-xs px-2.5 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:border-violet-500 font-mono text-center font-bold bg-white">
+                            <span class="text-xs text-slate-500 font-bold">m</span>
+                        </div>
+                        <!-- Preset Cepat Radius -->
+                        <div class="flex items-center gap-1.5 pt-1">
+                            <span class="text-[10px] font-bold text-slate-400">Pilihan:</span>
+                            <button type="button" onclick="updateRadiusPreview(100)" class="px-2 py-0.5 rounded-md bg-white hover:bg-slate-200 text-[10px] font-bold text-slate-600 border border-slate-200 transition">100m</button>
+                            <button type="button" onclick="updateRadiusPreview(200)" class="px-2 py-0.5 rounded-md bg-white hover:bg-slate-200 text-[10px] font-bold text-slate-600 border border-slate-200 transition">200m</button>
+                            <button type="button" onclick="updateRadiusPreview(300)" class="px-2 py-0.5 rounded-md bg-white hover:bg-slate-200 text-[10px] font-bold text-slate-600 border border-slate-200 transition">300m</button>
+                            <button type="button" onclick="updateRadiusPreview(500)" class="px-2 py-0.5 rounded-md bg-white hover:bg-slate-200 text-[10px] font-bold text-slate-600 border border-slate-200 transition">500m</button>
+                            <button type="button" onclick="updateRadiusPreview(1000)" class="px-2 py-0.5 rounded-md bg-white hover:bg-slate-200 text-[10px] font-bold text-slate-600 border border-slate-200 transition">1.000m</button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-extrabold shadow-md shadow-violet-600/20 transition cursor-pointer flex items-center justify-center gap-2">
+                        <span>💾 Simpan Pengaturan Geofence</span>
+                    </button>
                 </form>
 
                 <div id="geofence-feedback" class="hidden p-3 rounded-2xl bg-violet-50 border border-violet-200 text-violet-900 text-xs font-semibold text-center animate-in fade-in"></div>
-
-                <!-- Info Ringkas Geofence -->
-                <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs space-y-1">
-                    <p class="font-bold text-slate-700">ℹ️ Cara Kerja Geofence Radius:</p>
-                    <ul class="list-disc list-inside text-slate-500 space-y-0.5">
-                        <li>Warga <strong>di dalam</strong> radius: Tombol panic aktif dan berdenyut merah.</li>
-                        <li>Warga <strong>di luar</strong> radius: Tombol panic terkunci dan tampil pesan jarak.</li>
-                        <li>Validasi dua lapis: sisi klien (JavaScript Haversine) + sisi server (PHP Haversine).</li>
-                    </ul>
-                </div>
             </div>
 
-            <!-- Preview Peta Mini Geofence Radius -->
-            <div class="space-y-2">
-                <div class="flex items-center justify-between">
-                    <span class="text-xs font-bold text-slate-700">Preview Visual Radius Geofence</span>
-                    <span id="geofence-map-radius-label" class="text-[10px] font-mono text-violet-600 bg-violet-50 px-2 py-0.5 rounded border border-violet-200">{{ $rwSetting->panic_radius_meters ?? 300 }}m</span>
+            <!-- Preview Peta Interaktif Geofence (7 Kolom) -->
+            <div class="lg:col-span-7 space-y-2.5">
+                <!-- Toolbar Mode Interaksi Peta -->
+                <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-50 p-2 rounded-2xl border border-slate-200">
+                    <div class="flex items-center gap-1 text-xs">
+                        <span class="text-[11px] font-bold text-slate-500 mr-1">Mode Klik Peta:</span>
+                        <button type="button" id="btn-mode-center" onclick="setGeofenceMapMode('center')" class="px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 bg-violet-600 text-white shadow-2xs cursor-pointer">
+                            <span>🎯 Set Titik Pusat</span>
+                        </button>
+                        <button type="button" id="btn-mode-radius" onclick="setGeofenceMapMode('radius')" class="px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 cursor-pointer">
+                            <span>📏 Set Radius Jarak</span>
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span id="geofence-map-radius-label" class="text-[11px] font-mono text-violet-700 bg-violet-100/70 font-bold px-2 py-0.5 rounded border border-violet-200">{{ $rwSetting->panic_radius_meters ?? 300 }}m</span>
+                        <button type="button" onclick="fitGeofenceBounds()" class="px-2 py-1 rounded-lg bg-white hover:bg-slate-100 text-slate-600 text-[11px] font-bold border border-slate-200 transition flex items-center gap-1 cursor-pointer">
+                            <span>🔍 Zoom Pas</span>
+                        </button>
+                    </div>
                 </div>
-                <div class="rounded-2xl overflow-hidden border border-violet-200 shadow-inner" style="height: 300px;">
+
+                <!-- Wadah Peta -->
+                <div class="rounded-2xl overflow-hidden border border-violet-200 shadow-inner relative" style="height: 330px;">
                     <div id="map-geofence-preview" style="height: 100%; width: 100%; z-index: 10;"></div>
+                    <!-- Petunjuk Floating di Peta -->
+                    <div id="geofence-map-instruction" class="absolute bottom-2.5 left-2.5 right-2.5 z-20 bg-slate-900/85 backdrop-blur-xs text-white px-3 py-1.5 rounded-xl text-[11px] font-medium flex items-center justify-between shadow-lg pointer-events-none">
+                        <span id="instruction-text">🎯 <strong>Mode Pusat:</strong> Klik peta untuk mengisi Titik Pusat Latitude & Longitude otomatis.</span>
+                        <span id="live-distance-badge" class="font-mono text-[10px] text-emerald-300 font-bold"></span>
+                    </div>
                 </div>
-                <p class="text-[10px] text-slate-400 text-center">Lingkaran hijau transparan menunjukkan area radius aktif tombol panic.</p>
+
+                <!-- Keterangan Interaktif Bawah Peta -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-slate-500">
+                    <div class="p-2 rounded-xl bg-slate-50 border border-slate-200/80 flex items-start gap-1.5">
+                        <span class="text-sm">🎯</span>
+                        <span><strong>Titik Pusat:</strong> Klik peta atau geser marker ungu untuk mengubah koordinat secara instan.</span>
+                    </div>
+                    <div class="p-2 rounded-xl bg-slate-50 border border-slate-200/80 flex items-start gap-1.5">
+                        <span class="text-sm">📏</span>
+                        <span><strong>Radius:</strong> Geser pegangan hijau ↔️ di tepi lingkaran atau klik "Set Radius" lalu klik peta.</span>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -747,49 +798,213 @@
         });
     }
 
-    // ====== PETA MINI GEOFENCE PREVIEW ======
-    const geoPreviewLat = {{ $rwSetting->center_latitude ?? -6.208800 }};
-    const geoPreviewLng = {{ $rwSetting->center_longitude ?? 106.845600 }};
-    const geoPreviewRadius = {{ $rwSetting->panic_radius_meters ?? 300 }};
+    // ====== PETA INTERAKTIF GEOFENCE PREVIEW & PENGATURAN ======
+    let geoPreviewLat = {{ $rwSetting->center_latitude ?? -6.208800 }};
+    let geoPreviewLng = {{ $rwSetting->center_longitude ?? 106.845600 }};
+    let geoPreviewRadius = {{ $rwSetting->panic_radius_meters ?? 300 }};
+    let currentGeofenceMode = 'center'; // 'center' atau 'radius'
 
     const mapGeoPreview = L.map('map-geofence-preview').setView([geoPreviewLat, geoPreviewLng], 16);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap'
     }).addTo(mapGeoPreview);
 
+    // 1. Lingkaran Radius Geofence
     let geoCircle = L.circle([geoPreviewLat, geoPreviewLng], {
         radius: geoPreviewRadius,
-        color: '#059669',
-        fillColor: '#10b981',
-        fillOpacity: 0.15,
+        color: '#7c3aed',
+        fillColor: '#8b5cf6',
+        fillOpacity: 0.18,
         weight: 2,
         dashArray: '6, 6'
     }).addTo(mapGeoPreview);
 
+    // 2. Icon Titik Pusat
     const geoCenterIcon = L.divIcon({
-        html: '<div style="background: #7c3aed; width: 12px; height: 12px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 6px rgba(124,58,237,0.5);"></div>',
-        iconSize: [12, 12],
-        iconAnchor: [6, 6],
+        html: `
+            <div style="position: relative; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;">
+                <div style="position: absolute; width: 26px; height: 26px; background: rgba(124, 58, 237, 0.4); border-radius: 50%; animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;"></div>
+                <div style="position: relative; width: 18px; height: 18px; background: #6d28d9; border-radius: 50%; border: 2.5px solid #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; color: white; font-size: 10px;">
+                    🎯
+                </div>
+            </div>
+        `,
+        iconSize: [26, 26],
+        iconAnchor: [13, 13],
         className: ''
     });
-    let geoCenterMarker = L.marker([geoPreviewLat, geoPreviewLng], { icon: geoCenterIcon, draggable: true }).addTo(mapGeoPreview);
-    geoCenterMarker.bindPopup('<strong style="font-size:11px;">Titik Pusat Geofence RW 02</strong>');
 
-    // Saat marker di-drag, update input form
-    geoCenterMarker.on('dragend', function(e) {
-        const pos = e.target.getLatLng();
-        document.getElementById('geofence-lat').value = pos.lat.toFixed(6);
-        document.getElementById('geofence-lng').value = pos.lng.toFixed(6);
-        geoCircle.setLatLng(pos);
-        mapGeoPreview.setView(pos);
+    let geoCenterMarker = L.marker([geoPreviewLat, geoPreviewLng], {
+        icon: geoCenterIcon,
+        draggable: true,
+        zIndexOffset: 1000
+    }).addTo(mapGeoPreview);
+
+    geoCenterMarker.bindTooltip('🎯 Titik Pusat (Geser atau klik peta)', { direction: 'top', offset: [0, -10] });
+
+    // 3. Icon Handle Tepi Lingkaran (Pengatur Radius)
+    function createEdgeIcon(rad) {
+        return L.divIcon({
+            html: `
+                <div style="background: #059669; color: #ffffff; border-radius: 9999px; padding: 2px 8px; font-size: 10px; font-weight: 800; font-family: monospace; border: 2px solid #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.35); cursor: ew-resize; display: flex; align-items: center; gap: 3px; white-space: nowrap;">
+                    <span>↔️</span> <span>${rad}m</span>
+                </div>
+            `,
+            iconSize: [64, 22],
+            iconAnchor: [32, 11],
+            className: ''
+        });
+    }
+
+    // Fungsi Hitung Posisi Koordinat di Tepi Timur Lingkaran
+    function calculateEdgePosition(centerLat, centerLng, radiusMeters) {
+        const latRad = centerLat * (Math.PI / 180);
+        const deltaLng = radiusMeters / (111320 * Math.cos(latRad));
+        return [centerLat, centerLng + deltaLng];
+    }
+
+    let initialEdgePos = calculateEdgePosition(geoPreviewLat, geoPreviewLng, geoPreviewRadius);
+    let geoRadiusEdgeMarker = L.marker(initialEdgePos, {
+        icon: createEdgeIcon(geoPreviewRadius),
+        draggable: true,
+        zIndexOffset: 900
+    }).addTo(mapGeoPreview);
+
+    geoRadiusEdgeMarker.bindTooltip('↔️ Tarik untuk atur radius', { direction: 'right', offset: [15, 0] });
+
+    // Saat Handle Radius di-drag secara langsung
+    geoRadiusEdgeMarker.on('drag', function(e) {
+        const center = geoCenterMarker.getLatLng();
+        const curPos = e.target.getLatLng();
+        let newRad = Math.round(center.distanceTo(curPos));
+        if (newRad < 50) newRad = 50;
+        if (newRad > 5000) newRad = 5000;
+
+        applyNewRadius(newRad, false);
+
+        const badge = document.getElementById('live-distance-badge');
+        if (badge) badge.innerText = `Radius: ${newRad}m`;
     });
 
+    geoRadiusEdgeMarker.on('dragend', function(e) {
+        const center = geoCenterMarker.getLatLng();
+        const rad = parseInt(document.getElementById('geofence-radius').value) || 300;
+        geoRadiusEdgeMarker.setLatLng(calculateEdgePosition(center.lat, center.lng, rad));
+    });
+
+    // Saat Marker Titik Pusat di-drag
+    geoCenterMarker.on('drag', function(e) {
+        const pos = e.target.getLatLng();
+        updateCenterFormValues(pos.lat, pos.lng);
+        geoCircle.setLatLng(pos);
+        const rad = parseInt(document.getElementById('geofence-radius').value) || 300;
+        geoRadiusEdgeMarker.setLatLng(calculateEdgePosition(pos.lat, pos.lng, rad));
+
+        const badge = document.getElementById('live-distance-badge');
+        if (badge) badge.innerText = `Pusat: ${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}`;
+    });
+
+    geoCenterMarker.on('dragend', function(e) {
+        const pos = e.target.getLatLng();
+        mapGeoPreview.panTo(pos);
+    });
+
+    // Klik pada Peta Preview untuk Mengisi Otomatis
+    mapGeoPreview.on('click', function(e) {
+        if (currentGeofenceMode === 'center') {
+            // Mode 1: Set Titik Pusat secara otomatis dari klik peta
+            const lat = e.latlng.lat;
+            const lng = e.latlng.lng;
+            updateCenterFormValues(lat, lng);
+            geoCenterMarker.setLatLng([lat, lng]);
+            geoCircle.setLatLng([lat, lng]);
+            const rad = parseInt(document.getElementById('geofence-radius').value) || 300;
+            geoRadiusEdgeMarker.setLatLng(calculateEdgePosition(lat, lng, rad));
+
+            const badge = document.getElementById('live-distance-badge');
+            if (badge) badge.innerText = `Pusat: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+        } else if (currentGeofenceMode === 'radius') {
+            // Mode 2: Set Radius Jarak secara otomatis dari klik peta
+            const center = geoCenterMarker.getLatLng();
+            let distance = Math.round(center.distanceTo(e.latlng));
+            if (distance < 50) distance = 50;
+            if (distance > 5000) distance = 5000;
+
+            applyNewRadius(distance, true);
+
+            const badge = document.getElementById('live-distance-badge');
+            if (badge) badge.innerText = `Radius terukur: ${distance} meter`;
+        }
+    });
+
+    // Switch Mode Interaksi Peta (Pusat vs Radius)
+    function setGeofenceMapMode(mode) {
+        currentGeofenceMode = mode;
+        const btnCenter = document.getElementById('btn-mode-center');
+        const btnRadius = document.getElementById('btn-mode-radius');
+        const text = document.getElementById('instruction-text');
+
+        if (mode === 'center') {
+            btnCenter.className = 'px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 bg-violet-600 text-white shadow-2xs cursor-pointer';
+            btnRadius.className = 'px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 cursor-pointer';
+            text.innerHTML = '🎯 <strong>Mode Pusat:</strong> Klik peta untuk mengisi Titik Pusat Latitude & Longitude otomatis.';
+            mapGeoPreview.getContainer().style.cursor = 'crosshair';
+        } else {
+            btnCenter.className = 'px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 cursor-pointer';
+            btnRadius.className = 'px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 bg-emerald-600 text-white shadow-2xs cursor-pointer';
+            text.innerHTML = '📏 <strong>Mode Radius:</strong> Klik lokasi terluar jangkauan pada peta untuk mengukur radius meter.';
+            mapGeoPreview.getContainer().style.cursor = 'cell';
+        }
+    }
+
+    // Perbarui Input Form Titik Pusat
+    function updateCenterFormValues(lat, lng) {
+        document.getElementById('geofence-lat').value = parseFloat(lat).toFixed(6);
+        document.getElementById('geofence-lng').value = parseFloat(lng).toFixed(6);
+    }
+
+    // Terapkan Radius Baru ke Form, Slider, Lingkaran, & Marker Tepi
+    function applyNewRadius(radMeters, updateEdgePos = true) {
+        document.getElementById('geofence-radius').value = radMeters;
+        const slider = document.getElementById('geofence-radius-slider');
+        if (slider) slider.value = Math.min(radMeters, 2000);
+
+        document.getElementById('geofence-radius-display').innerText = radMeters + 'm';
+        document.getElementById('geofence-map-radius-label').innerText = radMeters + 'm';
+
+        geoCircle.setRadius(radMeters);
+        geoRadiusEdgeMarker.setIcon(createEdgeIcon(radMeters));
+
+        if (updateEdgePos) {
+            const center = geoCenterMarker.getLatLng();
+            geoRadiusEdgeMarker.setLatLng(calculateEdgePosition(center.lat, center.lng, radMeters));
+        }
+    }
+
+    // Callback Slider / Preset Radius
     function updateRadiusPreview(val) {
-        document.getElementById('geofence-radius').value = val;
-        document.getElementById('geofence-radius-display').innerText = val + 'm';
-        document.getElementById('geofence-map-radius-label').innerText = val + 'm';
-        geoCircle.setRadius(parseInt(val));
-        mapGeoPreview.fitBounds(geoCircle.getBounds().pad(0.3));
+        applyNewRadius(parseInt(val), true);
+        fitGeofenceBounds();
+    }
+
+    // Zoom Peta Menyesuaikan Lingkaran Radius
+    function fitGeofenceBounds() {
+        if (geoCircle) {
+            mapGeoPreview.fitBounds(geoCircle.getBounds().pad(0.25));
+        }
+    }
+
+    // Sinkronisasi Jika User Mengetik Angka Koordinat Manual di Input Form
+    function syncInputsToMap() {
+        const lat = parseFloat(document.getElementById('geofence-lat').value);
+        const lng = parseFloat(document.getElementById('geofence-lng').value);
+        if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+            geoCenterMarker.setLatLng([lat, lng]);
+            geoCircle.setLatLng([lat, lng]);
+            const rad = parseInt(document.getElementById('geofence-radius').value) || 300;
+            geoRadiusEdgeMarker.setLatLng(calculateEdgePosition(lat, lng, rad));
+            mapGeoPreview.panTo([lat, lng]);
+        }
     }
 
     function ambilLokasiAdminGPS() {
@@ -801,11 +1016,15 @@
             (pos) => {
                 const lat = pos.coords.latitude;
                 const lng = pos.coords.longitude;
-                document.getElementById('geofence-lat').value = lat.toFixed(6);
-                document.getElementById('geofence-lng').value = lng.toFixed(6);
+                updateCenterFormValues(lat, lng);
                 geoCenterMarker.setLatLng([lat, lng]);
                 geoCircle.setLatLng([lat, lng]);
+                const rad = parseInt(document.getElementById('geofence-radius').value) || 300;
+                geoRadiusEdgeMarker.setLatLng(calculateEdgePosition(lat, lng, rad));
                 mapGeoPreview.setView([lat, lng], 16);
+
+                const badge = document.getElementById('live-distance-badge');
+                if (badge) badge.innerText = `GPS: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
             },
             (err) => {
                 alert('Gagal mendeteksi GPS: ' + err.message);
@@ -844,9 +1063,11 @@
                 feedback.innerHTML = `✅ <strong>Pengaturan Geofence Berhasil Disimpan ke Database!</strong> Titik pusat: ${parseFloat(lat).toFixed(6)}, ${parseFloat(lng).toFixed(6)} — Radius aktif: ${radius} meter.`;
                 feedback.className = 'p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold text-center animate-in fade-in';
 
-                // Update visual peta utama juga
-                geofenceCircleMain.setLatLng([parseFloat(lat), parseFloat(lng)]);
-                geofenceCircleMain.setRadius(parseInt(radius));
+                // Update visual peta utama heatmap di bagian atas juga
+                if (typeof geofenceCircleMain !== 'undefined') {
+                    geofenceCircleMain.setLatLng([parseFloat(lat), parseFloat(lng)]);
+                    geofenceCircleMain.setRadius(parseInt(radius));
+                }
             } else {
                 feedback.innerHTML = `🚫 <strong>GAGAL MENYIMPAN:</strong> ${data.message || 'Terjadi kesalahan saat menyimpan pengaturan geofence.'}`;
                 feedback.className = 'p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-semibold text-center animate-in fade-in';

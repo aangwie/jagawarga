@@ -93,6 +93,10 @@
             @foreach($checkpoints as $ckp)
             @php
                 $isScanned = in_array($ckp->id, $scannedCheckpointIds);
+                $ckpTingkat = $ckp->tingkat_kerawanan ?? 'rawan';
+                $ckpBadge = $ckp->tingkat_kerawanan_badge ?? ($ckpTingkat === 'aman' ? '🟢 Aman / Pos Pantau' : ($ckpTingkat === 'sedang' ? '🟡 Kerawanan Sedang' : '🔴 Titik Rawan Prioritas'));
+                $ckpClass = $ckp->badge_class ?? ($ckpTingkat === 'aman' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : ($ckpTingkat === 'sedang' ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-rose-100 text-rose-800 border-rose-200'));
+                $ckpMapsUrl = $ckp->google_maps_url ?? (($ckp->latitude && $ckp->longitude) ? "https://www.google.com/maps?q={$ckp->latitude},{$ckp->longitude}" : '#');
             @endphp
             <div class="p-4 rounded-2xl border {{ $isScanned ? 'bg-emerald-50/40 border-emerald-200' : 'bg-slate-50 border-slate-200/80' }} flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition hover:shadow-xs">
                 <div class="flex items-start gap-3.5">
@@ -109,16 +113,16 @@
                             <span class="text-[10px] px-2 py-0.5 rounded-full font-bold {{ $isScanned ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' }}">
                                 {{ $isScanned ? 'Sudah Diperiksa' : 'Belum Diperiksa' }}
                             </span>
-                            <span class="text-[10px] px-2 py-0.5 rounded-md font-extrabold border {{ $ckp->badge_class }}">
-                                {{ $ckp->tingkat_kerawanan_badge }}
+                            <span class="text-[10px] px-2 py-0.5 rounded-md font-extrabold border {{ $ckpClass }}">
+                                {{ $ckpBadge }}
                             </span>
                         </div>
                         <p class="text-xs text-slate-500 mt-0.5">{{ $ckp->deskripsi ?? 'Area pengawasan patroli malam.' }}</p>
                         <div class="flex flex-wrap items-center gap-3 mt-1 text-[11px] text-slate-400 font-mono">
                             <span>Kode: <strong>{{ $ckp->kode_qr }}</strong></span>
-                            <span>RT {{ $ckp->rt }}</span>
+                            <span>RT {{ $ckp->rt ?? '01' }}</span>
                             @if($ckp->latitude && $ckp->longitude)
-                            <a href="{{ $ckp->google_maps_url }}" target="_blank" class="text-blue-600 hover:text-blue-700 font-bold flex items-center gap-0.5 no-underline transition">
+                            <a href="{{ $ckpMapsUrl }}" target="_blank" class="text-blue-600 hover:text-blue-700 font-bold flex items-center gap-0.5 no-underline transition">
                                 📍 Navigasi Maps
                             </a>
                             @endif
@@ -128,7 +132,7 @@
 
                 <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
                     @if($ckp->latitude && $ckp->longitude)
-                    <a href="{{ $ckp->google_maps_url }}" target="_blank" class="px-3 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold border border-blue-200 transition flex items-center gap-1.5 no-underline">
+                    <a href="{{ $ckpMapsUrl }}" target="_blank" class="px-3 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold border border-blue-200 transition flex items-center gap-1.5 no-underline">
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />

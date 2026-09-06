@@ -25,7 +25,10 @@ class JagaWargaController extends Controller
         try {
             PanicAlert::ensureTableExists();
             BukuTamu::ensureTableExists();
-            $checkpoints = Checkpoint::orderBy('urutan_patroli')->get();
+            Checkpoint::ensureTableExists();
+            $checkpoints = \Illuminate\Support\Facades\Schema::hasColumn('checkpoints', 'urutan_patroli')
+                ? Checkpoint::orderBy('urutan_patroli')->get()
+                : Checkpoint::orderBy('id')->get();
             $cctvs = CctvLingkungan::where('status', 'aktif')->get();
             $jadwalHariIni = JadwalRonda::with('user')->get();
             $laporanTerbaru = LaporanKejadian::with('user')->latest()->take(5)->get();
@@ -44,7 +47,11 @@ class JagaWargaController extends Controller
                     'latitude' => -6.208800,
                     'longitude' => 106.845600,
                     'deskripsi' => 'Pusat komando ronda malam RW 02, kentongan bambu & kotak P3K',
+                    'tingkat_kerawanan' => 'aman',
                     'urutan_patroli' => 1,
+                    'tingkat_kerawanan_badge' => '🟢 Aman / Pos Pantau',
+                    'badge_class' => 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                    'google_maps_url' => 'https://www.google.com/maps?q=-6.208800,106.845600',
                 ],
                 (object)[
                     'id' => 2,
@@ -54,7 +61,11 @@ class JagaWargaController extends Controller
                     'latitude' => -6.209500,
                     'longitude' => 106.846200,
                     'deskripsi' => 'Gerbang akses utama perumahan RT 01',
+                    'tingkat_kerawanan' => 'sedang',
                     'urutan_patroli' => 2,
+                    'tingkat_kerawanan_badge' => '🟡 Kerawanan Sedang',
+                    'badge_class' => 'bg-amber-100 text-amber-800 border-amber-200',
+                    'google_maps_url' => 'https://www.google.com/maps?q=-6.209500,106.846200',
                 ],
                 (object)[
                     'id' => 3,
@@ -64,7 +75,11 @@ class JagaWargaController extends Controller
                     'latitude' => -6.207900,
                     'longitude' => 106.847100,
                     'deskripsi' => 'Area bermain terbuka anak dan pembatas gang perumahan',
+                    'tingkat_kerawanan' => 'sedang',
                     'urutan_patroli' => 3,
+                    'tingkat_kerawanan_badge' => '🟡 Kerawanan Sedang',
+                    'badge_class' => 'bg-amber-100 text-amber-800 border-amber-200',
+                    'google_maps_url' => 'https://www.google.com/maps?q=-6.207900,106.847100',
                 ],
                 (object)[
                     'id' => 4,
@@ -73,8 +88,12 @@ class JagaWargaController extends Controller
                     'rt' => '02',
                     'latitude' => -6.208300,
                     'longitude' => 106.844900,
-                    'deskripsi' => 'Titik minim penerangan jalan ujung lorong RT 02',
+                    'deskripsi' => 'Area rawan kejahatan malam dan minim penerangan',
+                    'tingkat_kerawanan' => 'rawan',
                     'urutan_patroli' => 4,
+                    'tingkat_kerawanan_badge' => '🔴 Titik Rawan Prioritas',
+                    'badge_class' => 'bg-rose-100 text-rose-800 border-rose-200',
+                    'google_maps_url' => 'https://www.google.com/maps?q=-6.208300,106.844900',
                 ],
             ]);
 

@@ -32,7 +32,9 @@ class DashboardRwController extends Controller
             $totalCheckpoints = Checkpoint::count();
             $totalTamu = BukuTamu::count();
 
-            $checkpoints = Checkpoint::orderBy('urutan_patroli')->get();
+            $checkpoints = \Illuminate\Support\Facades\Schema::hasColumn('checkpoints', 'urutan_patroli')
+                ? Checkpoint::orderBy('urutan_patroli')->get()
+                : Checkpoint::orderBy('id')->get();
             $cctvs = CctvLingkungan::all();
             $jadwalList = JadwalRonda::with('user')->orderBy('hari')->get();
             $wargaList = User::orderBy('name')->get();
@@ -68,6 +70,12 @@ class DashboardRwController extends Controller
             }
 
         } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('DashboardRwController index error: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             $totalWarga = 24;
             $totalRonda = 8;
             $totalLaporan = 5;
@@ -76,10 +84,62 @@ class DashboardRwController extends Controller
             $totalTamu = 3;
 
             $checkpoints = collect([
-                (object)['id' => 1, 'nama_titik' => 'Pos Ronda Utama RW 02', 'latitude' => -6.208800, 'longitude' => 106.845600, 'rt' => '01'],
-                (object)['id' => 2, 'nama_titik' => 'Gapura Masuk Gerbang Blok A', 'latitude' => -6.209500, 'longitude' => 106.846200, 'rt' => '01'],
-                (object)['id' => 3, 'nama_titik' => 'Taman Lingkungan RT 02', 'latitude' => -6.207900, 'longitude' => 106.847100, 'rt' => '02'],
-                (object)['id' => 4, 'nama_titik' => 'Gardu Trafo & Gang Senggol', 'latitude' => -6.208300, 'longitude' => 106.844900, 'rt' => '02'],
+                (object)[
+                    'id' => 1,
+                    'nama_titik' => 'Pos Ronda Utama RW 02',
+                    'latitude' => -6.208800,
+                    'longitude' => 106.845600,
+                    'rt' => '01',
+                    'deskripsi' => 'Pusat koordinasi & kentongan digital siaga 24 jam.',
+                    'tingkat_kerawanan' => 'aman',
+                    'urutan_patroli' => 1,
+                    'kode_qr' => 'JW-CKP-001-POSRW',
+                    'tingkat_kerawanan_badge' => '🟢 Aman / Pos Pantau',
+                    'badge_class' => 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                    'google_maps_url' => 'https://www.google.com/maps?q=-6.208800,106.845600',
+                ],
+                (object)[
+                    'id' => 2,
+                    'nama_titik' => 'Gapura Masuk Gerbang Blok A',
+                    'latitude' => -6.209500,
+                    'longitude' => 106.846200,
+                    'rt' => '01',
+                    'deskripsi' => 'Portal perbatasan lingkungan, wajib digembok pukul 23:00 WIB.',
+                    'tingkat_kerawanan' => 'sedang',
+                    'urutan_patroli' => 2,
+                    'kode_qr' => 'JW-CKP-002-GAPURA',
+                    'tingkat_kerawanan_badge' => '🟡 Kerawanan Sedang',
+                    'badge_class' => 'bg-amber-100 text-amber-800 border-amber-200',
+                    'google_maps_url' => 'https://www.google.com/maps?q=-6.209500,106.846200',
+                ],
+                (object)[
+                    'id' => 3,
+                    'nama_titik' => 'Taman Lingkungan RT 02',
+                    'latitude' => -6.207900,
+                    'longitude' => 106.847100,
+                    'rt' => '02',
+                    'deskripsi' => 'Area taman terbuka dengan penerangan terbatas, rawan tindak asusila.',
+                    'tingkat_kerawanan' => 'sedang',
+                    'urutan_patroli' => 3,
+                    'kode_qr' => 'JW-CKP-003-TAMAN',
+                    'tingkat_kerawanan_badge' => '🟡 Kerawanan Sedang',
+                    'badge_class' => 'bg-amber-100 text-amber-800 border-amber-200',
+                    'google_maps_url' => 'https://www.google.com/maps?q=-6.207900,106.847100',
+                ],
+                (object)[
+                    'id' => 4,
+                    'nama_titik' => 'Gardu Trafo & Gang Senggol',
+                    'latitude' => -6.208300,
+                    'longitude' => 106.844900,
+                    'rt' => '02',
+                    'deskripsi' => 'Jalan buntu dan sepi, rawan pencurian kendaraan bermotor (curanmor).',
+                    'tingkat_kerawanan' => 'rawan',
+                    'urutan_patroli' => 4,
+                    'kode_qr' => 'JW-CKP-004-GARDU',
+                    'tingkat_kerawanan_badge' => '🔴 Titik Rawan Prioritas',
+                    'badge_class' => 'bg-rose-100 text-rose-800 border-rose-200',
+                    'google_maps_url' => 'https://www.google.com/maps?q=-6.208300,106.844900',
+                ],
             ]);
 
             $cctvs = collect([
@@ -96,10 +156,10 @@ class DashboardRwController extends Controller
             ]);
 
             $wargaList = collect([
-                (object)['id' => 1, 'name' => 'Budi Santoso', 'role' => 'warga', 'rt_id' => '01'],
-                (object)['id' => 2, 'name' => 'Siti Rahayu', 'role' => 'warga', 'rt_id' => '02'],
-                (object)['id' => 3, 'name' => 'Pak Joko Ronda', 'role' => 'petugas_ronda', 'rt_id' => '01'],
-                (object)['id' => 4, 'name' => 'Kang Asep Patroli', 'role' => 'petugas_ronda', 'rt_id' => '02'],
+                (object)['id' => 1, 'name' => 'Budi Santoso', 'nik' => '3301010101900001', 'role' => 'warga', 'rt_id' => '01', 'rt' => '01', 'rw' => '02', 'email' => 'budi@jagawarga.id', 'phone' => '081234567890'],
+                (object)['id' => 2, 'name' => 'Siti Rahayu', 'nik' => '3301010101900002', 'role' => 'warga', 'rt_id' => '02', 'rt' => '02', 'rw' => '02', 'email' => 'siti@jagawarga.id', 'phone' => '081234567891'],
+                (object)['id' => 3, 'name' => 'Pak Joko Ronda', 'nik' => '3301010101900003', 'role' => 'petugas_ronda', 'rt_id' => '01', 'rt' => '01', 'rw' => '02', 'email' => 'joko@jagawarga.id', 'phone' => '081234567892'],
+                (object)['id' => 4, 'name' => 'Kang Asep Patroli', 'nik' => '3301010101900004', 'role' => 'petugas_ronda', 'rt_id' => '02', 'rt' => '02', 'rw' => '02', 'email' => 'asep@jagawarga.id', 'phone' => '081234567893'],
             ]);
 
             $panicList = collect([]);
@@ -313,7 +373,34 @@ class DashboardRwController extends Controller
         ]);
 
         try {
-            $checkpoint = Checkpoint::findOrFail($id);
+            Checkpoint::ensureTableExists();
+
+            $checkpoint = Checkpoint::find($id);
+
+            if (!$checkpoint) {
+                // Jika ID belum tersimpan di DB (misal saat migrasi baru atau data mock), buatkan record-nya
+                $nextId = (Checkpoint::max('id') ?? 0) + 1;
+                $slug = \Illuminate\Support\Str::slug($validated['nama_titik']) ?: 'titik';
+                $kodeQr = 'JW-CKP-' . str_pad((string)$nextId, 3, '0', STR_PAD_LEFT) . '-' . substr(strtoupper($slug), 0, 8);
+
+                $checkpoint = Checkpoint::create([
+                    'nama_titik' => $validated['nama_titik'],
+                    'latitude' => $validated['latitude'],
+                    'longitude' => $validated['longitude'],
+                    'deskripsi' => $validated['deskripsi'] ?? null,
+                    'tingkat_kerawanan' => $validated['tingkat_kerawanan'] ?? 'rawan',
+                    'rt' => $validated['rt'] ?? '01',
+                    'urutan_patroli' => $validated['urutan_patroli'] ?? $nextId,
+                    'kode_qr' => $kodeQr,
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Titik rawan patroli berhasil disimpan ke database!',
+                    'checkpoint' => $checkpoint,
+                ]);
+            }
+
             $checkpoint->update([
                 'nama_titik' => $validated['nama_titik'],
                 'latitude' => $validated['latitude'],
@@ -330,6 +417,7 @@ class DashboardRwController extends Controller
                 'checkpoint' => $checkpoint,
             ]);
         } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('updateCheckpoint error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal memperbarui titik rawan: ' . $e->getMessage(),
@@ -343,15 +431,23 @@ class DashboardRwController extends Controller
     public function deleteCheckpoint($id)
     {
         try {
-            $checkpoint = Checkpoint::findOrFail($id);
-            $nama = $checkpoint->nama_titik;
-            $checkpoint->delete();
+            Checkpoint::ensureTableExists();
+
+            $checkpoint = Checkpoint::find($id);
+            if ($checkpoint) {
+                $nama = $checkpoint->nama_titik;
+                $checkpoint->delete();
+                $pesan = 'Titik rawan patroli "' . $nama . '" berhasil dihapus.';
+            } else {
+                $pesan = 'Titik rawan patroli berhasil dihapus.';
+            }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Titik rawan patroli "' . $nama . '" berhasil dihapus.',
+                'message' => $pesan,
             ]);
         } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('deleteCheckpoint error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menghapus titik rawan: ' . $e->getMessage(),
