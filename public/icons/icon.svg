@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#059669" />
+      <stop offset="50%" stop-color="#047857" />
+      <stop offset="100%" stop-color="#064e3b" />
+    </linearGradient>
+    <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8b5cf6" />
+      <stop offset="100%" stop-color="#6d28d9" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#064e3b" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Background Shield -->
+  <path d="M256 32L80 96V240C80 348.8 155.2 449.6 256 480C356.8 449.6 432 348.8 432 240V96L256 32Z" 
+        fill="url(#shieldGrad)" filter="url(#shadow)"/>
+
+  <!-- Inner Protective Shield Border -->
+  <path d="M256 56L104 112V236C104 330 169 418 256 446C343 418 408 330 408 236V112L256 56Z" 
+        stroke="#ffffff" stroke-opacity="0.25" stroke-width="6" fill="none"/>
+
+  <!-- Purple Accent Radar Arc -->
+  <path d="M196 210A84 84 0 0 1 316 210" stroke="url(#purpleGrad)" stroke-width="12" stroke-linecap="round"/>
+  <path d="M166 180A124 124 0 0 1 346 180" stroke="url(#purpleGrad)" stroke-width="10" stroke-linecap="round" stroke-dasharray="16 12"/>
+
+  <!-- Central Kentongan / Beacon Icon -->
+  <rect x="236" y="210" width="40" height="110" rx="12" fill="#ffffff"/>
+  <rect x="246" y="235" width="20" height="60" rx="6" fill="#047857"/>
+
+  <!-- Golden Signal Dot -->
+  <circle cx="256" cy="150" r="14" fill="#a78bfa"/>
+  <circle cx="256" cy="150" r="8" fill="#ffffff"/>
+
+  <!-- Citizen Security Base Badge -->
+  <path d="M210 340H302C310 340 316 346 314 354L306 380C304 388 296 394 288 394H224C216 394 208 388 206 380L198 354C196 346 202 340 210 340Z" fill="#a78bfa"/>
+</svg>

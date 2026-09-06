@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline - JagaWarga RW</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    body { background-color: #f8fafc; color: #1e293b; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+    .card { background: white; border-radius: 20px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); padding: 32px 24px; text-align: center; max-width: 420px; width: 100%; border: 1px solid #e2e8f0; }
+    .icon { width: 72px; height: 72px; background: #ecfdf5; color: #059669; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
+    h1 { font-size: 20px; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+    p { font-size: 14px; color: #64748b; line-height: 1.5; margin-bottom: 24px; }
+    .btn { display: inline-block; width: 100%; padding: 12px 20px; background: #059669; color: white; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 14px; border: none; cursor: pointer; transition: background 0.2s; }
+    .btn:hover { background: #047857; }
+    .contact { margin-top: 20px; padding-top: 16px; border-top: 1px solid #f1f5f9; font-size: 13px; color: #7c3aed; font-weight: 500; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">
+      <svg width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 4.243a9 9 0 01-12.728 0m0 0l2.829-2.829m-2.829 2.829L3 21m2.828-12.536a5 5 0 017.072 0m-4.243 4.243L8.464 9.88" />
+      </svg>
+    </div>
+    <h1>Anda Sedang Offline</h1>
+    <p>Koneksi internet Anda saat ini terputus. Pastikan data seluler atau WiFi di ponsel Anda aktif untuk mengakses fitur real-time JagaWarga RW.</p>
+    <button class="btn" onclick="window.location.reload()">Coba Muat Ulang</button>
+    <div class="contact">
+      Nomor Darurat Posko RW: <strong>0812-3456-7890</strong>
+    </div>
+  </div>
+</body>
+</html>

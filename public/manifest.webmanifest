@@ -1,0 +1,49 @@
+{
+  "name": "JagaWarga RW - Sistem Keamanan Warga Digital",
+  "short_name": "JagaWarga",
+  "description": "Sistem Integrasi Keamanan Warga Digital, Kentongan Online & Presensi Ronda Checkpoint",
+  "start_url": "/",
+  "id": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#059669",
+  "orientation": "portrait-primary",
+  "categories": ["social", "utilities", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Kentongan Online",
+      "short_name": "Darurat",
+      "description": "Kirim sinyal darurat bahaya seketika",
+      "url": "/#panic-button",
+      "icons": [{ "src": "/icons/icon.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Scan Checkpoint Ronda",
+      "short_name": "Scan QR",
+      "description": "Scan titik pos ronda malam",
+      "url": "/#scan-checkpoint",
+      "icons": [{ "src": "/icons/icon.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Buku Tamu 2x24 Jam",
+      "short_name": "Buku Tamu",
+      "description": "Pendataan tamu wajib lapor",
+      "url": "/#buku-tamu",
+      "icons": [{ "src": "/icons/icon.svg", "sizes": "192x192" }]
+    }
+  ]
+}
