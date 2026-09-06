@@ -36,6 +36,12 @@
                 </div>
             </div>
             <div class="flex items-center gap-2 self-end md:self-center">
+                <a href="{{ route('users.index') }}" class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md hover:shadow-blue-500/20 cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    <span>Kelola Pengguna</span>
+                </a>
                 <button onclick="window.print()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center gap-1.5 border border-slate-700 cursor-pointer">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
@@ -611,13 +617,15 @@
         const radius = document.getElementById('geofence-radius').value;
         const feedback = document.getElementById('geofence-feedback');
 
-        feedback.innerHTML = '⏳ Menyimpan pengaturan geofence...';
+        feedback.innerHTML = '⏳ Menyimpan pengaturan geofence ke database...';
+        feedback.className = 'p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-semibold text-center animate-in fade-in';
         feedback.classList.remove('hidden');
 
         fetch('/api/settings/geofence', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             },
             body: JSON.stringify({
@@ -626,18 +634,23 @@
                 panic_radius_meters: parseInt(radius)
             })
         })
-        .then(res => res.json())
-        .then(data => {
-            feedback.innerHTML = `✅ <strong>Pengaturan Geofence Berhasil Disimpan!</strong> Titik pusat: ${parseFloat(lat).toFixed(6)}, ${parseFloat(lng).toFixed(6)} — Radius aktif: ${radius} meter.`;
-            feedback.className = 'p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold text-center animate-in fade-in';
+        .then(async (res) => {
+            const data = await res.json();
+            if (res.ok && data.success) {
+                feedback.innerHTML = `✅ <strong>Pengaturan Geofence Berhasil Disimpan ke Database!</strong> Titik pusat: ${parseFloat(lat).toFixed(6)}, ${parseFloat(lng).toFixed(6)} — Radius aktif: ${radius} meter.`;
+                feedback.className = 'p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold text-center animate-in fade-in';
 
-            // Update visual peta utama juga
-            geofenceCircleMain.setLatLng([parseFloat(lat), parseFloat(lng)]);
-            geofenceCircleMain.setRadius(parseInt(radius));
+                // Update visual peta utama juga
+                geofenceCircleMain.setLatLng([parseFloat(lat), parseFloat(lng)]);
+                geofenceCircleMain.setRadius(parseInt(radius));
+            } else {
+                feedback.innerHTML = `🚫 <strong>GAGAL MENYIMPAN:</strong> ${data.message || 'Terjadi kesalahan saat menyimpan pengaturan geofence.'}`;
+                feedback.className = 'p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-semibold text-center animate-in fade-in';
+            }
         })
-        .catch(() => {
-            feedback.innerHTML = `✅ <strong>Pengaturan Berhasil (Demo Mode)!</strong> Radius: ${radius}m`;
-            feedback.className = 'p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold text-center animate-in fade-in';
+        .catch((err) => {
+            feedback.innerHTML = `🚫 <strong>KONEKSI GAGAL:</strong> Tidak dapat menghubungi server. Pastikan koneksi internet dan server aktif. (${err.message || 'Network Error'})`;
+            feedback.className = 'p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-semibold text-center animate-in fade-in';
         });
     }
 </script>

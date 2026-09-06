@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardRwController;
 use App\Http\Controllers\JagaWargaController;
 use App\Http\Controllers\RondaController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\WargaController;
 use Illuminate\Support\Facades\Route;
 
@@ -66,4 +67,10 @@ Route::middleware(['auth', 'role:rt,rw,bhabinkamtibmas'])->group(function () {
     Route::delete('/api/jadwal/{id}', [DashboardRwController::class, 'deleteJadwal'])->name('api.jadwal.delete');
     Route::post('/api/wa-reminder', [DashboardRwController::class, 'sendWhatsappReminder'])->name('api.wa_reminder');
     Route::post('/api/settings/geofence', [DashboardRwController::class, 'updateGeofenceSettings'])->name('api.settings.geofence');
+
+    // Manajemen Pengguna (User Management CRUD)
+    Route::get('/users', [UserController::class, 'index'])->name('users.index');
+    Route::post('/users', [UserController::class, 'store'])->name('users.store');
+    Route::put('/users/{id}', [UserController::class, 'update'])->name('users.update');
+    Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
 });

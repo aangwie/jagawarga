@@ -70,25 +70,32 @@ class WargaController extends Controller
         $lat = $validated['latitude'] ?? null;
         $lon = $validated['longitude'] ?? null;
 
-        // Validasi Geofencing jika koordinat tersedia
-        if ($lat && $lon) {
-            $distance = RwSetting::calculateDistanceMeters(
-                $lat,
-                $lon,
-                $setting->center_latitude,
-                $setting->center_longitude
-            );
+        // Wajibkan izin lokasi perangkat telah aktif
+        if (!$lat || !$lon) {
+            return response()->json([
+                'success' => false,
+                'location_required' => true,
+                'message' => 'Akses lokasi perangkat belum diizinkan atau koordinat belum diperoleh. Tombol kentongan dinonaktifkan sampai lokasi terverifikasi.',
+            ], 422);
+        }
 
-            // Jika di luar radius aktif (misal 300 meter), tolak aktivasi tombol darurat
-            if ($distance > $setting->panic_radius_meters) {
-                return response()->json([
-                    'success' => false,
-                    'out_of_radius' => true,
-                    'distance' => $distance,
-                    'max_radius' => $setting->panic_radius_meters,
-                    'message' => "Posisi Anda berada di luar jangkauan wilayah RW 02 (Jarak: {$distance}m, Batas: {$setting->panic_radius_meters}m). Tombol panic hanya aktif di dalam radius lingkungan RW 02.",
-                ], 422);
-            }
+        // Validasi Geofencing jika koordinat tersedia
+        $distance = RwSetting::calculateDistanceMeters(
+            $lat,
+            $lon,
+            $setting->center_latitude,
+            $setting->center_longitude
+        );
+
+        // Jika di luar radius aktif (misal 300 meter), tolak aktivasi tombol darurat
+        if ($distance > $setting->panic_radius_meters) {
+            return response()->json([
+                'success' => false,
+                'out_of_radius' => true,
+                'distance' => $distance,
+                'max_radius' => $setting->panic_radius_meters,
+                'message' => "Posisi Anda berada di luar jangkauan wilayah RW 02 (Jarak: {$distance}m, Batas: {$setting->panic_radius_meters}m). Tombol panic hanya aktif di dalam radius lingkungan RW 02.",
+            ], 422);
         }
 
         try {

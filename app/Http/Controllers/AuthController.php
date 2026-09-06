@@ -66,6 +66,17 @@ class AuthController extends Controller
         $user = User::where('email', $targetEmail)->first();
 
         if (!$user) {
+            // NIK unik per role agar tidak terjadi constraint violation
+            $nikMap = [
+                'rw' => '3201010101010097',
+                'rt' => '3201010101010095',
+                'petugas_ronda' => '3201010101010093',
+                'ronda' => '3201010101010093',
+                'bhabinkamtibmas' => '3201010101010098',
+                'bhabin' => '3201010101010098',
+                'warga' => '3201010101010091',
+            ];
+
             // Jika user belum ada di DB, buatkan secara dinamis untuk kenyamanan uji coba
             $user = User::firstOrCreate(
                 ['email' => $targetEmail],
@@ -77,7 +88,7 @@ class AuthController extends Controller
                         'bhabinkamtibmas', 'bhabin' => 'Aiptu Hendro Prasetyo',
                         default => 'Budi Santoso'
                     },
-                    'nik' => '3201010101010099',
+                    'nik' => $nikMap[$role] ?? ('320101010101' . str_pad(random_int(10, 99), 4, '0', STR_PAD_LEFT)),
                     'phone' => '081234567890',
                     'password' => bcrypt('password'),
                     'role' => in_array($role, ['rw', 'rt', 'petugas_ronda', 'bhabinkamtibmas', 'warga']) ? $role : 'petugas_ronda',

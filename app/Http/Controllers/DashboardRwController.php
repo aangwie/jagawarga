@@ -147,23 +147,27 @@ class DashboardRwController extends Controller
         ]);
 
         try {
+            RwSetting::ensureTableExists();
+
             $setting = RwSetting::getActiveSetting();
-            $setting->update([
-                'center_latitude' => $validated['center_latitude'],
-                'center_longitude' => $validated['center_longitude'],
-                'panic_radius_meters' => $validated['panic_radius_meters'],
-            ]);
+            $setting->center_latitude = $validated['center_latitude'];
+            $setting->center_longitude = $validated['center_longitude'];
+            $setting->panic_radius_meters = $validated['panic_radius_meters'];
+            $setting->save();
+
+            // Refresh untuk memastikan data terbaru dari DB
+            $setting->refresh();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Pengaturan geofence RW 02 berhasil disimpan! Titik pusat: ' . $setting->center_latitude . ', ' . $setting->center_longitude . ' dengan radius ' . $setting->panic_radius_meters . ' meter.',
+                'message' => 'Pengaturan geofence RW 02 berhasil disimpan di database! Titik pusat: ' . $setting->center_latitude . ', ' . $setting->center_longitude . ' — Radius aktif: ' . $setting->panic_radius_meters . ' meter.',
                 'setting' => $setting,
             ]);
         } catch (\Throwable $e) {
             return response()->json([
-                'success' => true,
-                'message' => 'Pengaturan berhasil diperbarui (Demo Mode)! Radius aktif: ' . $validated['panic_radius_meters'] . 'm',
-            ]);
+                'success' => false,
+                'message' => 'Gagal menyimpan pengaturan geofence ke database: ' . $e->getMessage(),
+            ], 500);
         }
     }
 

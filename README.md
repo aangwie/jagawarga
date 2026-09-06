@@ -40,14 +40,15 @@ Sistem keamanan lingkungan tradisional sering menghadapi kendala seperti sinyal 
 
 ## ✨ Fitur Utama
 
-### 1. 🚨 Kentongan Online (Tombol Darurat Digital)
+### 1. 🚨 Kentongan Online (Tombol Darurat Digital dengan Audio Spesifik per Kejadian)
 - **Tombol Sentuh Raksasa**: Animasi denyut radar merah beresonansi tinggi (*panic-pulse*).
-- **Pilihan Kategori Bahaya**:
-  - 🚨 *Maling / Curanmor*
-  - 🔥 *Kebakaran*
-  - 🚑 *Darurat Medis*
-  - ⚠️ *Bahaya Lainnya*
-- **Sintesis Audio Kentongan & Sirene**: Menggunakan *Web Audio API* untuk menghasilkan suara ketukan kayu kentongan bambu dan sirene alarm darurat secara langsung tanpa beban unduh file media eksternal.
+- **Perbedaan Suara & Ritme Kentongan Khas Nusantara per Kategori Kejadian**:
+  - 🚨 **Maling / Curanmor**: Ketukan bertubi-tubi sangat cepat rapat (*Doro Muluk / Titir Maling*, interval 120ms) dipadukan nada alarm maling tajam berdenyut + siaran suara otomatis (*Voice Broadcast*): *"Perhatian! Ada maling atau pencurian di lingkungan warga! Warga segera siaga kepung lokasi!"*.
+  - 🔥 **Bahaya Kebakaran**: Ketukan rangkap ganda bergaung (*Titir Ganda: Tang-Tang... Tang-Tang...*) dipadukan sirene pemadam kebakaran melolong naik-turun berkala + siaran suara otomatis: *"Perhatian! Bahaya kebakaran! Bawa air dan alat pemadam, segera bantu lokasi!"*.
+  - 🚑 **Darurat Medis / Ambulans**: Sirene dua nada khas ambulans (*WEE-WOO Hi-Lo Siren*, 750Hz - 540Hz) diselingi ketukan kentongan bulat ritmis lambat + siaran suara otomatis: *"Panggilan darurat medis! Pertolongan pertama dan ambulans dibutuhkan!"*.
+  - ⚠️ **Siaga Lingkungan / Lainnya**: Ketukan kentongan panggilan pos ronda siaga (*Tong... Tong... Tong-Tong-Tong*) diselingi nada chime peringatan + siaran suara otomatis: *"Perhatian! Peringatan siaga keamanan lingkungan RW 02!"*.
+- **Sintesis Audio Web Audio API & Web Speech API**: Menghasilkan resonansi kayu kentongan, variasi sirene, dan pengumuman vokal bahasa Indonesia secara *real-time* langsung dari peramban ponsel tanpa perlu mengunduh file MP3/WAV berat.
+- **Fitur Tes Suara Tiap Kategori**: Pengguna dapat mendengarkan sampel bunyi masing-masing kategori melalui tombol **"🔊 Tes Bunyi"** di formulir warga atau dropdown **"Tes Suara"** di bilah navigasi atas.
 - **Validasi Geofencing 300 Meter**: Tombol terkunci otomatis (*disabled/grayscale*) jika warga berada di luar jangkauan wilayah RW.
 - **Tombol Simulasi Jarak**: Mempermudah demonstrasi (*🟢 Posko <300m, 🔴 Luar Wilayah >300m, 📍 GPS Asli*).
 

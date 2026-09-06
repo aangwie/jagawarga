@@ -164,24 +164,31 @@ class JagaWargaController extends Controller
         $lat = $validated['latitude'] ?? null;
         $lon = $validated['longitude'] ?? null;
 
-        // Validasi jarak Geofencing jika koordinat tersedia
-        if ($lat && $lon) {
-            $distance = RwSetting::calculateDistanceMeters(
-                $lat,
-                $lon,
-                $setting->center_latitude,
-                $setting->center_longitude
-            );
+        // Wajibkan izin lokasi perangkat telah aktif
+        if (!$lat || !$lon) {
+            return response()->json([
+                'success' => false,
+                'location_required' => true,
+                'message' => 'Akses lokasi perangkat belum diizinkan atau koordinat belum diperoleh. Tombol kentongan dinonaktifkan sampai lokasi terverifikasi.',
+            ], 422);
+        }
 
-            if ($distance > $setting->panic_radius_meters) {
-                return response()->json([
-                    'success' => false,
-                    'out_of_radius' => true,
-                    'distance' => $distance,
-                    'max_radius' => $setting->panic_radius_meters,
-                    'message' => "Posisi Anda berada di luar radius keamanan RW 02 (Jarak: {$distance}m, Batas: {$setting->panic_radius_meters}m). Tombol panic hanya aktif di dalam jangkauan RW 02.",
-                ], 422);
-            }
+        // Validasi jarak Geofencing jika koordinat tersedia
+        $distance = RwSetting::calculateDistanceMeters(
+            $lat,
+            $lon,
+            $setting->center_latitude,
+            $setting->center_longitude
+        );
+
+        if ($distance > $setting->panic_radius_meters) {
+            return response()->json([
+                'success' => false,
+                'out_of_radius' => true,
+                'distance' => $distance,
+                'max_radius' => $setting->panic_radius_meters,
+                'message' => "Posisi Anda berada di luar radius keamanan RW 02 (Jarak: {$distance}m, Batas: {$setting->panic_radius_meters}m). Tombol panic hanya aktif di dalam jangkauan RW 02.",
+            ], 422);
         }
 
         try {

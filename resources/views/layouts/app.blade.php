@@ -57,17 +57,20 @@
 
     <!-- Active Emergency Broadcast Banner (Tampil otomatis saat Panic Alert aktif) -->
     <div id="emergency-banner" class="hidden fixed top-0 left-0 right-0 z-40 bg-rose-600 text-white shadow-xl border-b-2 border-rose-800 transition-all duration-300">
-        <div class="max-w-5xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
-            <div class="flex items-center gap-2.5">
+        <div class="max-w-5xl mx-auto px-4 py-2.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+            <div class="flex items-center gap-2.5 flex-wrap">
                 <span class="w-3 h-3 rounded-full bg-white animate-ping"></span>
-                <span class="text-xs md:text-sm font-bold tracking-wide uppercase">KENTONGAN DARURAT BERBUNYI!</span>
-                <span id="emergency-details" class="text-xs bg-rose-700/80 px-2 py-0.5 rounded text-rose-100 font-medium hidden md:inline">
+                <span id="emergency-banner-title" class="text-xs md:text-sm font-black tracking-wide uppercase">🚨 KENTONGAN DARURAT BERBUNYI!</span>
+                <span id="emergency-details" class="text-xs bg-white/20 px-2 py-0.5 rounded-lg text-white font-medium">
                     RT 01 Blok A No. 12
                 </span>
+                <span id="emergency-sound-rhythm" class="text-[11px] bg-black/25 px-2.5 py-0.5 rounded-md text-amber-200 font-semibold hidden md:inline">
+                    Ketukan Cepat Doro Muluk
+                </span>
             </div>
-            <div class="flex items-center gap-2">
-                <button onclick="stopEmergencySound()" class="px-2.5 py-1 text-xs font-bold bg-white text-rose-700 rounded-lg shadow hover:bg-rose-50 transition cursor-pointer">
-                    Mute Suara
+            <div class="flex items-center gap-2 self-end sm:self-auto">
+                <button onclick="stopEmergencySound()" class="px-2.5 py-1 text-xs font-bold bg-white text-slate-800 rounded-lg shadow hover:bg-slate-100 transition cursor-pointer flex items-center gap-1">
+                    🔇 <span>Mute Suara</span>
                 </button>
                 <button onclick="dismissEmergencyBanner()" class="text-white/80 hover:text-white text-lg leading-none p-1 cursor-pointer" aria-label="Tutup">
                     &times;
@@ -106,12 +109,22 @@
                 <a href="/warga" class="px-3 py-1.5 rounded-xl {{ request()->is('warga*') ? 'bg-white text-emerald-800 shadow-xs' : 'text-slate-600 hover:text-slate-900' }} transition">
                     Warga & Lapor
                 </a>
-                <a href="/ronda" class="px-3 py-1.5 rounded-xl {{ request()->is('ronda*') ? 'bg-white text-violet-800 shadow-xs' : 'text-slate-600 hover:text-slate-900' }} transition">
-                    Petugas Ronda
-                </a>
-                <a href="/dashboard" class="px-3 py-1.5 rounded-xl {{ request()->is('dashboard*') ? 'bg-white text-indigo-900 shadow-xs' : 'text-slate-600 hover:text-slate-900' }} transition">
-                    Dashboard RW
-                </a>
+                @auth
+                    @if(Auth::user()->isPetugasRonda() || Auth::user()->isPengurus())
+                    <a href="/ronda" class="px-3 py-1.5 rounded-xl {{ request()->is('ronda*') ? 'bg-white text-violet-800 shadow-xs' : 'text-slate-600 hover:text-slate-900' }} transition">
+                        Petugas Ronda
+                    </a>
+                    @endif
+
+                    @if(Auth::user()->isPengurus())
+                    <a href="/dashboard" class="px-3 py-1.5 rounded-xl {{ request()->is('dashboard*') ? 'bg-white text-indigo-900 shadow-xs' : 'text-slate-600 hover:text-slate-900' }} transition">
+                        Dashboard RW
+                    </a>
+                    <a href="{{ route('users.index') }}" class="px-3 py-1.5 rounded-xl {{ request()->is('users*') ? 'bg-white text-blue-900 shadow-xs' : 'text-slate-600 hover:text-slate-900' }} transition">
+                        Manajemen User
+                    </a>
+                    @endif
+                @endauth
             </nav>
 
             <!-- Status Siaga & Quick Actions -->
@@ -123,12 +136,53 @@
                     <span>Wilayah Kondusif</span>
                 </div>
 
-                <!-- Tombol Uji Suara Kentongan -->
-                <button onclick="toggleKentonganSound()" id="sound-btn" title="Uji Suara Kentongan Digital" class="p-2 rounded-xl text-slate-600 hover:text-violet-700 hover:bg-violet-50 transition border border-slate-200/80 cursor-pointer">
-                    <svg id="sound-icon" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                    </svg>
-                </button>
+                <!-- Tombol Uji Suara Kentongan dengan Dropdown Pilihan Kategori -->
+                <div class="relative">
+                    <button onclick="toggleSoundMenu()" id="sound-btn" title="Uji Suara Kentongan Digital per Kategori" class="p-2 rounded-xl text-slate-600 hover:text-violet-700 hover:bg-violet-50 transition border border-slate-200/80 cursor-pointer flex items-center gap-1.5">
+                        <svg id="sound-icon" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                        </svg>
+                        <span class="text-[11px] font-extrabold hidden sm:inline text-slate-700">Tes Suara</span>
+                    </button>
+
+                    <!-- Dropdown Pilihan Suara Kentongan -->
+                    <div id="sound-dropdown" class="hidden absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-200/80 py-2 z-50 text-xs">
+                        <div class="px-3.5 py-1.5 border-b border-slate-100 flex items-center justify-between">
+                            <span class="font-extrabold text-[11px] text-slate-800">Pilih Ciri Suara Kentongan</span>
+                            <button type="button" onclick="stopEmergencySound(); document.getElementById('sound-dropdown').classList.add('hidden')" class="text-[10px] text-rose-600 font-extrabold hover:underline cursor-pointer">Stop Audio</button>
+                        </div>
+                        <div class="p-1.5 space-y-1">
+                            <button type="button" onclick="testSoundCategory('pencurian')" class="w-full text-left p-2 rounded-xl hover:bg-rose-50 flex items-start gap-2.5 transition cursor-pointer">
+                                <span class="text-base">🚨</span>
+                                <div>
+                                    <span class="font-bold text-slate-900 block text-[11px]">Maling / Curanmor</span>
+                                    <span class="text-[10px] text-slate-500 leading-tight block">Ketukan Doro Muluk cepat bertubi-tubi & sirene maling</span>
+                                </div>
+                            </button>
+                            <button type="button" onclick="testSoundCategory('kebakaran')" class="w-full text-left p-2 rounded-xl hover:bg-orange-50 flex items-start gap-2.5 transition cursor-pointer">
+                                <span class="text-base">🔥</span>
+                                <div>
+                                    <span class="font-bold text-slate-900 block text-[11px]">Bahaya Kebakaran</span>
+                                    <span class="text-[10px] text-slate-500 leading-tight block">Titir ganda (Tang-Tang...) & sirene damkar melolong</span>
+                                </div>
+                            </button>
+                            <button type="button" onclick="testSoundCategory('medis')" class="w-full text-left p-2 rounded-xl hover:bg-blue-50 flex items-start gap-2.5 transition cursor-pointer">
+                                <span class="text-base">🚑</span>
+                                <div>
+                                    <span class="font-bold text-slate-900 block text-[11px]">Darurat Medis / Ambulans</span>
+                                    <span class="text-[10px] text-slate-500 leading-tight block">Sirene dua nada (WEE-WOO) & ketukan teratur</span>
+                                </div>
+                            </button>
+                            <button type="button" onclick="testSoundCategory('lainnya')" class="w-full text-left p-2 rounded-xl hover:bg-amber-50 flex items-start gap-2.5 transition cursor-pointer">
+                                <span class="text-base">⚠️</span>
+                                <div>
+                                    <span class="font-bold text-slate-900 block text-[11px]">Siaga Lingkungan / Bencana</span>
+                                    <span class="text-[10px] text-slate-500 leading-tight block">Ketukan siaga poskamling & nada peringatan</span>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Tombol Install PWA (Hanya muncul jika browser mendukung) -->
                 <button id="pwa-install-btn" class="hidden items-center gap-1.5 px-3 py-1.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold shadow-sm transition cursor-pointer">
@@ -175,10 +229,10 @@
 
     <!-- Mobile Bottom Navigation Bar (App Shell PWA) -->
     <nav class="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-lg border-t border-slate-200/80 px-2 py-1.5 shadow-lg">
-        <div class="max-w-md mx-auto grid grid-cols-5 gap-1 text-center">
+        <div class="max-w-md mx-auto flex items-center justify-around text-center">
             
             <!-- 1. Beranda / Panic -->
-            <a href="/" class="flex flex-col items-center py-1 {{ request()->is('/') ? 'text-emerald-700 font-bold' : 'text-slate-500 hover:text-emerald-700' }} transition group">
+            <a href="/" class="flex-1 flex flex-col items-center py-1 {{ request()->is('/') ? 'text-emerald-700 font-bold' : 'text-slate-500 hover:text-emerald-700' }} transition group">
                 <div class="p-1 rounded-xl group-hover:bg-emerald-50 transition">
                     <svg class="w-5 h-5 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -188,7 +242,7 @@
             </a>
 
             <!-- 2. Modul Warga & Lapor -->
-            <a href="/warga" class="flex flex-col items-center py-1 {{ request()->is('warga*') ? 'text-emerald-700 font-bold' : 'text-slate-500 hover:text-emerald-700' }} transition group">
+            <a href="/warga" class="flex-1 flex flex-col items-center py-1 {{ request()->is('warga*') ? 'text-emerald-700 font-bold' : 'text-slate-500 hover:text-emerald-700' }} transition group">
                 <div class="p-1 rounded-xl group-hover:bg-emerald-50 transition">
                     <svg class="w-5 h-5 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -197,18 +251,8 @@
                 <span class="text-[10px] font-medium leading-tight mt-0.5">Warga</span>
             </a>
 
-            <!-- 3. Presensi Ronda (QR Scan) -->
-            <a href="/ronda" class="flex flex-col items-center py-1 {{ request()->is('ronda*') ? 'text-violet-700 font-bold' : 'text-slate-500 hover:text-violet-700' }} transition group">
-                <div class="p-1 rounded-xl group-hover:bg-violet-50 transition">
-                    <svg class="w-5 h-5 mx-auto text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-                    </svg>
-                </div>
-                <span class="text-[10px] font-semibold text-violet-700 leading-tight mt-0.5">Patroli QR</span>
-            </a>
-
-            <!-- 4. Buku Tamu (2x24h) -->
-            <a href="/warga#form-tamu-warga" class="flex flex-col items-center py-1 text-slate-500 hover:text-blue-700 transition group">
+            <!-- 3. Buku Tamu (2x24h) -->
+            <a href="/warga#form-tamu-warga" class="flex-1 flex flex-col items-center py-1 text-slate-500 hover:text-blue-700 transition group">
                 <div class="p-1 rounded-xl group-hover:bg-blue-50 transition">
                     <svg class="w-5 h-5 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -217,15 +261,51 @@
                 <span class="text-[10px] font-medium leading-tight mt-0.5">Buku Tamu</span>
             </a>
 
-            <!-- 5. Dashboard RW / Peta -->
-            <a href="/dashboard" class="flex flex-col items-center py-1 {{ request()->is('dashboard*') ? 'text-indigo-700 font-bold' : 'text-slate-500 hover:text-indigo-700' }} transition group">
-                <div class="p-1 rounded-xl group-hover:bg-indigo-50 transition">
-                    <svg class="w-5 h-5 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                </div>
-                <span class="text-[10px] font-medium leading-tight mt-0.5">Dashboard RW</span>
-            </a>
+            @auth
+                <!-- 4. Petugas Ronda (Role: petugas_ronda, rt, rw, bhabinkamtibmas) -->
+                @if(Auth::user()->isPetugasRonda() || Auth::user()->isPengurus())
+                <a href="/ronda" class="flex-1 flex flex-col items-center py-1 {{ request()->is('ronda*') ? 'text-violet-700 font-bold' : 'text-slate-500 hover:text-violet-700' }} transition group">
+                    <div class="p-1 rounded-xl group-hover:bg-violet-50 transition">
+                        <svg class="w-5 h-5 mx-auto text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                        </svg>
+                    </div>
+                    <span class="text-[10px] font-semibold text-violet-700 leading-tight mt-0.5">Patroli QR</span>
+                </a>
+                @endif
+
+                <!-- 5. Dashboard RW (Role: rt, rw, bhabinkamtibmas) -->
+                @if(Auth::user()->isPengurus())
+                <a href="/dashboard" class="flex-1 flex flex-col items-center py-1 {{ request()->is('dashboard*') ? 'text-indigo-700 font-bold' : 'text-slate-500 hover:text-indigo-700' }} transition group">
+                    <div class="p-1 rounded-xl group-hover:bg-indigo-50 transition">
+                        <svg class="w-5 h-5 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                    </div>
+                    <span class="text-[10px] font-medium leading-tight mt-0.5">Dashboard</span>
+                </a>
+
+                <!-- 6. Kelola Pengguna (Role: rt, rw, bhabinkamtibmas) -->
+                <a href="{{ route('users.index') }}" class="flex-1 flex flex-col items-center py-1 {{ request()->is('users*') ? 'text-blue-700 font-bold' : 'text-slate-500 hover:text-blue-700' }} transition group">
+                    <div class="p-1 rounded-xl group-hover:bg-blue-50 transition">
+                        <svg class="w-5 h-5 mx-auto text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                    </div>
+                    <span class="text-[10px] font-medium leading-tight mt-0.5">User</span>
+                </a>
+                @endif
+            @else
+                <!-- Tombol Masuk Petugas untuk Publik / Tamu di HP -->
+                <a href="{{ route('login') }}" class="flex-1 flex flex-col items-center py-1 text-slate-500 hover:text-emerald-700 transition group">
+                    <div class="p-1 rounded-xl group-hover:bg-emerald-50 transition">
+                        <svg class="w-5 h-5 mx-auto text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                        </svg>
+                    </div>
+                    <span class="text-[10px] font-medium leading-tight mt-0.5">Masuk</span>
+                </a>
+            @endauth
 
         </div>
     </nav>
@@ -249,6 +329,94 @@
         let audioCtx = null;
         let kentonganInterval = null;
         let isPlayingAudio = false;
+        let activeEmergencyCategory = 'pencurian';
+
+        // Konfigurasi Ritme Tradisional & Sirene Per Kategori Bahaya
+        const categoryAudioConfig = {
+            'pencurian': {
+                name: 'MALING / CURANMOR',
+                icon: '🚨',
+                bgClass: 'bg-rose-600',
+                borderClass: 'border-rose-800',
+                btnColorClass: 'bg-rose-600',
+                rhythmDesc: 'Ketukan Bertubi-tubi Sangat Cepat (Doro Muluk) & Sirene Maling',
+                voiceAlert: 'Perhatian! Ada maling atau pencurian di lingkungan warga! Warga segera siaga kepung lokasi!',
+                intervalMs: 120, // Sangat cepat & rapat
+                playBeat: (beat) => {
+                    // Ketukan kayu sangat cepat & tajam (720Hz & 600Hz bergantian)
+                    const freq = (beat % 2 === 0) ? 720 : 600;
+                    playKentonganKnock(freq, 0.08, 0.9);
+
+                    // Tambahkan suara buzzer/siren chirp tajam setiap 4 ketukan
+                    if (beat % 4 === 0) {
+                        playSirenTone(1100, 'sawtooth', 0.12, 0.25);
+                    } else if (beat % 4 === 2) {
+                        playSirenTone(880, 'sawtooth', 0.12, 0.22);
+                    }
+                }
+            },
+            'kebakaran': {
+                name: 'BAHAYA KEBAKARAN',
+                icon: '🔥',
+                bgClass: 'bg-orange-600',
+                borderClass: 'border-orange-800',
+                btnColorClass: 'bg-orange-600',
+                rhythmDesc: 'Ketukan Titir Ganda (Tang-Tang... Tang-Tang...) & Sirene Damkar',
+                voiceAlert: 'Perhatian! Bahaya kebakaran! Bawa air dan alat pemadam, segera bantu lokasi!',
+                intervalMs: 160,
+                playBeat: (beat) => {
+                    // Pola 4 ketukan: beat 0 dan 1 ketuk keras rangkap, beat 2 dan 3 jeda untuk sirene
+                    const step = beat % 4;
+                    if (step === 0 || step === 1) {
+                        playKentonganKnock(680, 0.11, 0.95);
+                    }
+
+                    // Sirene damkar melolong naik-turun berkala
+                    const sirenFreqs = [440, 580, 780, 960, 840, 680, 520, 460];
+                    const sFreq = sirenFreqs[beat % sirenFreqs.length];
+                    playSirenTone(sFreq, 'triangle', 0.22, 0.3);
+                }
+            },
+            'medis': {
+                name: 'DARURAT MEDIS / AMBULANS',
+                icon: '🚑',
+                bgClass: 'bg-blue-600',
+                borderClass: 'border-blue-800',
+                btnColorClass: 'bg-blue-600',
+                rhythmDesc: 'Sirene Ambulans Dua Nada (WEE-WOO) & Ketukan Lambat',
+                voiceAlert: 'Panggilan darurat medis! Pertolongan pertama dan ambulans dibutuhkan!',
+                intervalMs: 360,
+                playBeat: (beat) => {
+                    // Nada Hi-Lo Ambulans khas Indonesia/Eropa (750Hz - 540Hz bergantian)
+                    const isHi = (beat % 2 === 0);
+                    playSirenTone(isHi ? 750 : 540, 'sine', 0.33, 0.35);
+
+                    // Ketukan kentongan bulat ritmis lambat
+                    if (isHi) {
+                        playKentonganKnock(480, 0.16, 0.7);
+                    }
+                }
+            },
+            'lainnya': {
+                name: 'PERINGATAN SIAGA LINGKUNGAN',
+                icon: '⚠️',
+                bgClass: 'bg-amber-600',
+                borderClass: 'border-amber-800',
+                btnColorClass: 'bg-amber-600',
+                rhythmDesc: 'Ketukan Panggilan Siaga Pos (Tong... Tong... Tong-Tong-Tong)',
+                voiceAlert: 'Perhatian! Peringatan siaga keamanan lingkungan RW 02!',
+                intervalMs: 240,
+                playBeat: (beat) => {
+                    const step = beat % 6;
+                    if (step === 0 || step === 2 || step === 4 || step === 5) {
+                        playKentonganKnock(540, 0.14, 0.85);
+                    }
+                    if (step === 0) {
+                        playSirenTone(640, 'triangle', 0.2, 0.2);
+                    }
+                }
+            }
+        };
 
         function getAudioContext() {
             if (!audioCtx) {
@@ -261,20 +429,19 @@
             return audioCtx;
         }
 
-        // Memainkan 1 ketukan kentongan kayu (wood-block resonance)
-        function playKentonganKnock(frequency = 580, duration = 0.12) {
+        // 1. Ketukan Resonansi Kayu Kentongan
+        function playKentonganKnock(frequency = 580, duration = 0.12, volume = 0.8) {
             const ctx = getAudioContext();
             const now = ctx.currentTime;
 
-            // Oscillator utama (resonansi frekuensi kayu)
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
 
             osc.type = 'triangle';
             osc.frequency.setValueAtTime(frequency, now);
-            osc.frequency.exponentialRampToValueAtTime(frequency * 0.4, now + duration);
+            osc.frequency.exponentialRampToValueAtTime(frequency * 0.35, now + duration);
 
-            gain.gain.setValueAtTime(0.8, now);
+            gain.gain.setValueAtTime(volume, now);
             gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
 
             osc.connect(gain);
@@ -284,18 +451,66 @@
             osc.stop(now + duration);
         }
 
-        // Memainkan ritme Kentongan Darurat (Titik-Titik Doro / Bahaya Cepat)
-        function startKentonganAlarm() {
-            if (isPlayingAudio) return;
-            isPlayingAudio = true;
-            document.getElementById('sound-btn').classList.add('bg-rose-100', 'text-rose-700');
+        // 2. Nada Sirene / Melolong untuk Pembeda Alarm
+        function playSirenTone(frequency, type = 'sine', duration = 0.2, volume = 0.25) {
+            const ctx = getAudioContext();
+            const now = ctx.currentTime;
 
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc.type = type;
+            osc.frequency.setValueAtTime(frequency, now);
+
+            gain.gain.setValueAtTime(volume, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc.start(now);
+            osc.stop(now + duration);
+        }
+
+        // 3. Pengumuman Suara Suara Otomatis (Speech Synthesis)
+        function speakVoiceAlert(text) {
+            if ('speechSynthesis' in window) {
+                try {
+                    window.speechSynthesis.cancel();
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'id-ID';
+                    utterance.rate = 1.05;
+                    utterance.pitch = 1.1;
+                    utterance.volume = 1.0;
+                    window.speechSynthesis.speak(utterance);
+                } catch (e) {
+                    console.log('Voice announcement unsupported:', e);
+                }
+            }
+        }
+
+        // Memulai ritme audio spesifik per kategori bahaya
+        function startKentonganAlarm(kategori = 'pencurian') {
+            stopEmergencySound();
+            isPlayingAudio = true;
+            activeEmergencyCategory = kategori;
+
+            const cfg = categoryAudioConfig[kategori] || categoryAudioConfig['pencurian'];
+
+            // Bunyikan pengumuman suara bahasa Indonesia agar warga langsung tahu
+            speakVoiceAlert(cfg.voiceAlert);
+
+            // Nyalakan ketukan ritmis berulang
             let beat = 0;
             kentonganInterval = setInterval(() => {
-                // Pola ketukan kentongan bahaya: tong-tong-tong cepat
-                playKentonganKnock(beat % 2 === 0 ? 640 : 540, 0.09);
+                cfg.playBeat(beat);
                 beat++;
-            }, 160);
+            }, cfg.intervalMs);
+
+            const soundBtn = document.getElementById('sound-btn');
+            if (soundBtn) {
+                soundBtn.classList.add('bg-rose-100', 'text-rose-700');
+            }
         }
 
         function stopEmergencySound() {
@@ -303,30 +518,60 @@
                 clearInterval(kentonganInterval);
                 kentonganInterval = null;
             }
+            if ('speechSynthesis' in window) {
+                try { window.speechSynthesis.cancel(); } catch(e) {}
+            }
             isPlayingAudio = false;
-            document.getElementById('sound-btn').classList.remove('bg-rose-100', 'text-rose-700');
+            const soundBtn = document.getElementById('sound-btn');
+            if (soundBtn) {
+                soundBtn.classList.remove('bg-rose-100', 'text-rose-700');
+            }
         }
 
         function toggleKentonganSound() {
             if (isPlayingAudio) {
                 stopEmergencySound();
             } else {
-                startKentonganAlarm();
+                startKentonganAlarm(activeEmergencyCategory || 'pencurian');
                 setTimeout(() => {
-                    // Demo auto-stop setelah 4 detik jika hanya preview
+                    // Demo auto-stop setelah 4.5 detik jika hanya preview tombol di header
                     if (isPlayingAudio && document.getElementById('emergency-banner').classList.contains('hidden')) {
                         stopEmergencySound();
                     }
-                }, 4000);
+                }, 4500);
             }
         }
 
-        function triggerEmergencyAlert(detail = 'RT 01 Blok A No. 12') {
+        function triggerEmergencyAlert(categoryOrDetail = 'pencurian', detailText = '') {
+            let kategori = 'pencurian';
+            let detail = '';
+
+            if (typeof categoryOrDetail === 'string') {
+                const lower = categoryOrDetail.toLowerCase();
+                if (lower.includes('kebakaran')) kategori = 'kebakaran';
+                else if (lower.includes('medis')) kategori = 'medis';
+                else if (lower.includes('lainnya')) kategori = 'lainnya';
+                else if (lower.includes('maling') || lower.includes('curanmor') || lower.includes('pencurian')) kategori = 'pencurian';
+                else if (categoryAudioConfig[categoryOrDetail]) kategori = categoryOrDetail;
+
+                detail = detailText || categoryOrDetail;
+            }
+
+            const cfg = categoryAudioConfig[kategori] || categoryAudioConfig['pencurian'];
             const banner = document.getElementById('emergency-banner');
+            const titleEl = document.getElementById('emergency-banner-title');
             const detailsSpan = document.getElementById('emergency-details');
-            if (detailsSpan) detailsSpan.innerText = detail;
-            banner.classList.remove('hidden');
-            startKentonganAlarm();
+            const rhythmSpan = document.getElementById('emergency-sound-rhythm');
+
+            if (banner) {
+                banner.className = `fixed top-0 left-0 right-0 z-40 ${cfg.bgClass} text-white shadow-xl border-b-2 ${cfg.borderClass} transition-all duration-300`;
+                if (titleEl) titleEl.innerHTML = `${cfg.icon} ${cfg.name}!`;
+                if (detailsSpan) detailsSpan.innerHTML = detail;
+                if (rhythmSpan) rhythmSpan.innerText = `Ciri Suara: ${cfg.rhythmDesc}`;
+                banner.classList.remove('hidden');
+            }
+
+            startKentonganAlarm(kategori);
         }
 
         function dismissEmergencyBanner() {
@@ -334,10 +579,28 @@
             stopEmergencySound();
         }
 
+        // Dropdown Uji Suara Kentongan per Kategori
+        function toggleSoundMenu() {
+            const menu = document.getElementById('sound-dropdown');
+            if (menu) menu.classList.toggle('hidden');
+        }
+
+        function testSoundCategory(kategori) {
+            const menu = document.getElementById('sound-dropdown');
+            if (menu) menu.classList.add('hidden');
+
+            startKentonganAlarm(kategori);
+            setTimeout(() => {
+                if (isPlayingAudio && document.getElementById('emergency-banner').classList.contains('hidden')) {
+                    stopEmergencySound();
+                }
+            }, 4500);
+        }
+
         // Role Switcher Interaction
         function toggleRoleMenu() {
             const menu = document.getElementById('role-dropdown');
-            menu.classList.toggle('hidden');
+            if (menu) menu.classList.toggle('hidden');
         }
 
         function switchRole(role) {
@@ -368,10 +631,16 @@
 
         // Close dropdown when clicked outside
         document.addEventListener('click', (e) => {
-            const button = document.getElementById('role-menu-button');
-            const dropdown = document.getElementById('role-dropdown');
-            if (button && dropdown && !button.contains(e.target) && !dropdown.contains(e.target)) {
-                dropdown.classList.add('hidden');
+            const roleBtn = document.getElementById('role-menu-button');
+            const roleDrop = document.getElementById('role-dropdown');
+            if (roleBtn && roleDrop && !roleBtn.contains(e.target) && !roleDrop.contains(e.target)) {
+                roleDrop.classList.add('hidden');
+            }
+
+            const soundBtn = document.getElementById('sound-btn');
+            const soundDrop = document.getElementById('sound-dropdown');
+            if (soundBtn && soundDrop && !soundBtn.contains(e.target) && !soundDrop.contains(e.target)) {
+                soundDrop.classList.add('hidden');
             }
         });
 
