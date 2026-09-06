@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardRwController;
+use App\Http\Controllers\DeviceResetController;
 use App\Http\Controllers\JagaWargaController;
 use App\Http\Controllers\PanicAlertController;
 use App\Http\Controllers\RondaController;
@@ -39,7 +40,7 @@ Route::get('/api/settings/public', function () {
 
 /*
 |--------------------------------------------------------------------------
-| 2. SISTEM AUTENTIKASI (LOGIN & LOGOUT)
+| 2. SISTEM AUTENTIKASI (LOGIN, LOGOUT, SELECT ROLE, & GANTI PERANGKAT)
 |--------------------------------------------------------------------------
 */
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -47,24 +48,35 @@ Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::get('/login/demo/{role}', [AuthController::class, 'quickDemoLogin'])->name('login.demo');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+// Alur Pengajuan Ganti Perangkat Warga (Bisa diakses dari form login)
+Route::get('/device-reset', [AuthController::class, 'showDeviceResetForm'])->name('device.reset');
+Route::post('/device-reset', [AuthController::class, 'submitDeviceReset'])->name('device.reset.post');
+
+// Pemilihan Peran (Wajib Setelah Login) & Switch Role
+Route::middleware('auth')->group(function () {
+    Route::get('/select-role', [AuthController::class, 'showSelectRoleForm'])->name('role.select');
+    Route::post('/select-role', [AuthController::class, 'selectRole'])->name('role.select.post');
+    Route::post('/switch-role', [AuthController::class, 'switchRole'])->name('role.switch');
+});
+
 /*
 |--------------------------------------------------------------------------
 | 3. HALAMAN TERPROTEKSI: PETUGAS RONDA POSKAMLING
 |--------------------------------------------------------------------------
-| Hanya dapat diakses oleh Petugas Ronda, Ketua RT, Pengurus RW, dan Bhabin.
+| Hanya dapat diakses oleh Petugas Ronda, Ketua RT, Pengurus RW, Bhabin, dan Nakes.
 */
-Route::middleware(['auth', 'role:petugas_ronda,rt,rw,bhabinkamtibmas'])->group(function () {
+Route::middleware(['auth', 'role:petugas_ronda,rt,rw,bhabinkamtibmas,nakes_puskesmas'])->group(function () {
     Route::get('/ronda', [RondaController::class, 'index'])->name('ronda.index');
     Route::post('/api/presensi', [RondaController::class, 'scanQr'])->name('api.presensi');
 });
 
 /*
 |--------------------------------------------------------------------------
-| 4. HALAMAN TERPROTEKSI: COMMAND CENTER PENGURUS RW & BHABINKAMTIBMAS
+| 4. HALAMAN TERPROTEKSI: COMMAND CENTER PENGURUS RW, BHABINKAMTIBMAS & NAKES
 |--------------------------------------------------------------------------
-| Hanya dapat diakses oleh Ketua RT, Pengurus RW (Admin), dan Bhabinkamtibmas.
+| Hanya dapat diakses oleh Ketua RT, Pengurus RW (Admin), Bhabinkamtibmas, dan Nakes Puskesmas.
 */
-Route::middleware(['auth', 'role:rt,rw,bhabinkamtibmas'])->group(function () {
+Route::middleware(['auth', 'role:rt,rw,bhabinkamtibmas,nakes_puskesmas'])->group(function () {
     Route::get('/dashboard', [DashboardRwController::class, 'index'])->name('dashboard.index');
     Route::post('/api/jadwal', [DashboardRwController::class, 'storeJadwal'])->name('api.jadwal');
     Route::delete('/api/jadwal/{id}', [DashboardRwController::class, 'deleteJadwal'])->name('api.jadwal.delete');
@@ -76,11 +88,17 @@ Route::middleware(['auth', 'role:rt,rw,bhabinkamtibmas'])->group(function () {
     Route::put('/api/checkpoints/{id}', [DashboardRwController::class, 'updateCheckpoint'])->name('api.checkpoints.update');
     Route::delete('/api/checkpoints/{id}', [DashboardRwController::class, 'deleteCheckpoint'])->name('api.checkpoints.delete');
 
-    // Manajemen Pengguna (User Management CRUD)
+    // Manajemen Pengguna (User Management CRUD & Reset Perangkat)
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::post('/users', [UserController::class, 'store'])->name('users.store');
     Route::put('/users/{id}', [UserController::class, 'update'])->name('users.update');
     Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
+    Route::post('/users/{id}/reset-device', [DeviceResetController::class, 'resetUserDevice'])->name('users.reset_device');
+
+    // Manajemen Permohonan Ganti Perangkat Warga
+    Route::get('/device-requests', [DeviceResetController::class, 'index'])->name('device.requests.index');
+    Route::post('/device-requests/{id}/approve', [DeviceResetController::class, 'approve'])->name('device.requests.approve');
+    Route::post('/device-requests/{id}/reject', [DeviceResetController::class, 'reject'])->name('device.requests.reject');
 
     // Pengaturan Sistem & Pembaruan Web (GitHub PAT, Symlink Storage)
     Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
@@ -92,10 +110,4 @@ Route::middleware(['auth', 'role:rt,rw,bhabinkamtibmas'])->group(function () {
     // Manajemen Riwayat Kentongan (Hanya Admin / Pengurus: Edit & Hapus)
     Route::put('/api/panic/{id}', [PanicAlertController::class, 'update'])->name('api.panic.update');
     Route::delete('/api/panic/{id}', [PanicAlertController::class, 'destroy'])->name('api.panic.destroy');
-
-    // Manajemen Titik Rawan Patroli (Checkpoints)
-    Route::post('/api/checkpoints', [DashboardRwController::class, 'storeCheckpoint'])->name('api.checkpoints.store');
-    Route::put('/api/checkpoints/{id}', [DashboardRwController::class, 'updateCheckpoint'])->name('api.checkpoints.update');
-    Route::delete('/api/checkpoints/{id}', [DashboardRwController::class, 'deleteCheckpoint'])->name('api.checkpoints.destroy');
 });
-

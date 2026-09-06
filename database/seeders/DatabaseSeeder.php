@@ -21,7 +21,20 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Akun Pengguna Contoh untuk Semua Peran (Role)
+        // 0. Pastikan Semua Peran (Roles) Tersedia
+        $rolesData = [
+            ['name' => 'warga', 'display_name' => 'Warga Lingkungan', 'description' => 'Akses Panic Button (Kentongan), Pelaporan Kejadian Warga, dan Pengisian Buku Tamu.', 'icon' => '🏠', 'badge_color' => 'bg-emerald-100 text-emerald-800 border-emerald-200'],
+            ['name' => 'petugas_ronda', 'display_name' => 'Petugas Ronda', 'description' => 'Akses Portal Poskamling, Scanner QR Titik Patroli, dan Presensi Ronda Malam.', 'icon' => '🛡️', 'badge_color' => 'bg-amber-100 text-amber-800 border-amber-200'],
+            ['name' => 'rt', 'display_name' => 'Ketua RT', 'description' => 'Validasi Tamu 2x24 Jam, Monitoring Wilayah RT, dan Pengawasan Jadwal Warga.', 'icon' => '🏘️', 'badge_color' => 'bg-blue-100 text-blue-800 border-blue-200'],
+            ['name' => 'rw', 'display_name' => 'Pengurus RW (Admin)', 'description' => 'Command Center Peta Heatmap Kerawanan, Manajemen Pengguna, CCTV, dan Pengaturan Sistem.', 'icon' => '🗺️', 'badge_color' => 'bg-violet-100 text-violet-800 border-violet-200'],
+            ['name' => 'bhabinkamtibmas', 'display_name' => 'Bhabinkamtibmas', 'description' => 'Monitoring Keamanan dan Ketertiban Masyarakat (Kamtibmas) Kepolisian di Wilayah RW.', 'icon' => '⭐', 'badge_color' => 'bg-indigo-100 text-indigo-800 border-indigo-200'],
+            ['name' => 'nakes_puskesmas', 'display_name' => 'Nakes Puskesmas', 'description' => 'Akses Respon Medis Darurat, Penanganan Pasien Ambulans, dan Pemantauan Kesehatan Warga.', 'icon' => '🩺', 'badge_color' => 'bg-teal-100 text-teal-800 border-teal-200'],
+        ];
+        foreach ($rolesData as $rd) {
+            \App\Models\Role::firstOrCreate(['name' => $rd['name']], $rd);
+        }
+
+        // 1. Akun Pengguna Contoh untuk Semua Peran (Role) & Dukungan Multi-Role
         $password = Hash::make('password');
 
         $warga1 = User::updateOrCreate(
@@ -30,6 +43,7 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Budi Santoso',
                 'nik' => '3201010101010001',
                 'phone' => '081234567890',
+                'nama_ibu' => 'Siti Aminah',
                 'password' => $password,
                 'role' => 'warga',
                 'rt_id' => '01',
@@ -38,6 +52,7 @@ class DatabaseSeeder extends Seeder
                 'no_rumah' => '12',
             ]
         );
+        $warga1->syncRoles(['warga']);
 
         $warga2 = User::updateOrCreate(
             ['email' => 'siti@jagawarga.local'],
@@ -45,6 +60,7 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Siti Rahayu',
                 'nik' => '3201010101010002',
                 'phone' => '081234567891',
+                'nama_ibu' => 'Rukmini',
                 'password' => $password,
                 'role' => 'warga',
                 'rt_id' => '02',
@@ -53,13 +69,16 @@ class DatabaseSeeder extends Seeder
                 'no_rumah' => '5B',
             ]
         );
+        $warga2->syncRoles(['warga']);
 
+        // Multi-Role: Petugas Ronda sekaligus Warga
         $ronda1 = User::updateOrCreate(
             ['email' => 'ronda@jagawarga.local'],
             [
                 'name' => 'Pak Joko Ronda',
                 'nik' => '3201010101010003',
                 'phone' => '081234567892',
+                'nama_ibu' => 'Kartini',
                 'password' => $password,
                 'role' => 'petugas_ronda',
                 'rt_id' => '01',
@@ -68,6 +87,7 @@ class DatabaseSeeder extends Seeder
                 'no_rumah' => '03',
             ]
         );
+        $ronda1->syncRoles(['petugas_ronda', 'warga']);
 
         $ronda2 = User::updateOrCreate(
             ['email' => 'asep@jagawarga.local'],
@@ -75,6 +95,7 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Kang Asep Patroli',
                 'nik' => '3201010101010004',
                 'phone' => '081234567893',
+                'nama_ibu' => 'Euis Rohayati',
                 'password' => $password,
                 'role' => 'petugas_ronda',
                 'rt_id' => '02',
@@ -83,13 +104,16 @@ class DatabaseSeeder extends Seeder
                 'no_rumah' => '08',
             ]
         );
+        $ronda2->syncRoles(['petugas_ronda', 'warga']);
 
+        // Multi-Role: Ketua RT 01 sekaligus Petugas Ronda & Warga
         $rt01 = User::updateOrCreate(
             ['email' => 'rt01@jagawarga.local'],
             [
                 'name' => 'Pak Bambang (Ketua RT 01)',
                 'nik' => '3201010101010005',
                 'phone' => '081234567894',
+                'nama_ibu' => 'Sri Wahyuni',
                 'password' => $password,
                 'role' => 'rt',
                 'rt_id' => '01',
@@ -98,6 +122,7 @@ class DatabaseSeeder extends Seeder
                 'no_rumah' => '01',
             ]
         );
+        $rt01->syncRoles(['rt', 'petugas_ronda', 'warga']);
 
         $rt02 = User::updateOrCreate(
             ['email' => 'rt02@jagawarga.local'],
@@ -105,6 +130,7 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Pak Heri (Ketua RT 02)',
                 'nik' => '3201010101010006',
                 'phone' => '081234567895',
+                'nama_ibu' => 'Endang Sulastri',
                 'password' => $password,
                 'role' => 'rt',
                 'rt_id' => '02',
@@ -113,13 +139,16 @@ class DatabaseSeeder extends Seeder
                 'no_rumah' => '01',
             ]
         );
+        $rt02->syncRoles(['rt', 'warga']);
 
+        // Multi-Role: Pengurus RW 02 sekaligus Ketua RT & Warga
         $rw02 = User::updateOrCreate(
             ['email' => 'rw02@jagawarga.local'],
             [
                 'name' => 'Pak Gunawan (Ketua RW 02)',
                 'nik' => '3201010101010007',
                 'phone' => '081234567896',
+                'nama_ibu' => 'Hj. Maryam',
                 'password' => $password,
                 'role' => 'rw',
                 'rt_id' => '01',
@@ -128,6 +157,7 @@ class DatabaseSeeder extends Seeder
                 'no_rumah' => '10',
             ]
         );
+        $rw02->syncRoles(['rw', 'rt', 'warga']);
 
         $bhabin = User::updateOrCreate(
             ['email' => 'bhabin@jagawarga.local'],
@@ -135,6 +165,7 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Aiptu Hendro Prasetyo (Bhabinkamtibmas)',
                 'nik' => '3201010101010008',
                 'phone' => '081234567897',
+                'nama_ibu' => 'Suprapti',
                 'password' => $password,
                 'role' => 'bhabinkamtibmas',
                 'rt_id' => '01',
@@ -143,6 +174,25 @@ class DatabaseSeeder extends Seeder
                 'no_rumah' => '00',
             ]
         );
+        $bhabin->syncRoles(['bhabinkamtibmas', 'warga']);
+
+        // Multi-Role: Nakes Puskesmas sekaligus Warga
+        $nakes = User::updateOrCreate(
+            ['email' => 'nakes@jagawarga.local'],
+            [
+                'name' => 'dr. Sarah Amalia (Nakes Puskesmas)',
+                'nik' => '3201010101010009',
+                'phone' => '081234567898',
+                'nama_ibu' => 'Dr. Nurhasanah',
+                'password' => $password,
+                'role' => 'nakes_puskesmas',
+                'rt_id' => '01',
+                'rw_id' => '02',
+                'alamat' => 'Puskesmas Pembantu RW 02',
+                'no_rumah' => '01',
+            ]
+        );
+        $nakes->syncRoles(['nakes_puskesmas', 'warga']);
 
         // 2. Data Titik Checkpoint Patroli Ronda (QR Code)
         $ckp1 = Checkpoint::updateOrCreate(

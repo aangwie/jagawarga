@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,11 +19,15 @@ class UserController extends Controller
         $filterRole = $request->get('role', 'semua');
         $search = $request->get('q', '');
 
-        $query = User::query();
+        $query = User::with('roles');
 
-        // Filter berdasarkan role
-        if ($filterRole !== 'semua' && in_array($filterRole, ['warga', 'petugas_ronda', 'rt', 'rw', 'bhabinkamtibmas'])) {
-            $query->where('role', $filterRole);
+        // Filter berdasarkan role (Many-to-Many atau kolom legacy)
+        if ($filterRole !== 'semua' && in_array($filterRole, ['warga', 'petugas_ronda', 'rt', 'rw', 'bhabinkamtibmas', 'nakes_puskesmas'])) {
+            $query->where(function ($q) use ($filterRole) {
+                $q->whereHas('roles', function ($sub) use ($filterRole) {
+                    $sub->where('name', $filterRole);
+                })->orWhere('role', $filterRole);
+            });
         }
 
         // Pencarian kata kunci
@@ -33,23 +38,26 @@ class UserController extends Controller
                   ->orWhere('nik', 'like', "%{$search}%")
                   ->orWhere('phone', 'like', "%{$search}%")
                   ->orWhere('alamat', 'like', "%{$search}%")
+                  ->orWhere('nama_ibu', 'like', "%{$search}%")
                   ->orWhere('rt_id', 'like', "%{$search}%");
             });
         }
 
-        $users = $query->orderBy('role')->orderBy('name')->get();
+        $users = $query->orderBy('name')->get();
+        $availableRoles = Role::all();
 
-        // Statistik per role
+        // Statistik per role (menghitung multi-role yang dimiliki)
         $stats = [
             'total' => User::count(),
-            'warga' => User::where('role', 'warga')->count(),
-            'petugas_ronda' => User::where('role', 'petugas_ronda')->count(),
-            'rt' => User::where('role', 'rt')->count(),
-            'rw' => User::where('role', 'rw')->count(),
-            'bhabinkamtibmas' => User::where('role', 'bhabinkamtibmas')->count(),
+            'warga' => User::whereHas('roles', fn($q) => $q->where('name', 'warga'))->orWhere('role', 'warga')->count(),
+            'petugas_ronda' => User::whereHas('roles', fn($q) => $q->where('name', 'petugas_ronda'))->orWhere('role', 'petugas_ronda')->count(),
+            'rt' => User::whereHas('roles', fn($q) => $q->where('name', 'rt'))->orWhere('role', 'rt')->count(),
+            'rw' => User::whereHas('roles', fn($q) => $q->where('name', 'rw'))->orWhere('role', 'rw')->count(),
+            'bhabinkamtibmas' => User::whereHas('roles', fn($q) => $q->where('name', 'bhabinkamtibmas'))->orWhere('role', 'bhabinkamtibmas')->count(),
+            'nakes_puskesmas' => User::whereHas('roles', fn($q) => $q->where('name', 'nakes_puskesmas'))->orWhere('role', 'nakes_puskesmas')->count(),
         ];
 
-        return view('users.index', compact('users', 'stats', 'filterRole', 'search'));
+        return view('users.index', compact('users', 'stats', 'filterRole', 'search', 'availableRoles'));
     }
 
     /**
@@ -62,7 +70,10 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email',
             'nik' => 'required|string|size:16|unique:users,nik',
             'phone' => 'nullable|string|max:20',
-            'role' => 'required|in:warga,petugas_ronda,rt,rw,bhabinkamtibmas',
+            'nama_ibu' => 'nullable|string|max:100',
+            'roles' => 'nullable|array',
+            'roles.*' => 'in:warga,petugas_ronda,rt,rw,bhabinkamtibmas,nakes_puskesmas',
+            'role' => 'nullable|string|in:warga,petugas_ronda,rt,rw,bhabinkamtibmas,nakes_puskesmas',
             'rt_id' => 'nullable|string|max:5',
             'rw_id' => 'nullable|string|max:5',
             'alamat' => 'nullable|string|max:255',
@@ -70,13 +81,24 @@ class UserController extends Controller
             'password' => 'required|string|min:6',
         ]);
 
+        $roles = $request->input('roles', []);
+        if (empty($roles) && !empty($validated['role'])) {
+            $roles = [$validated['role']];
+        }
+        if (empty($roles)) {
+            $roles = ['warga'];
+        }
+
+        $validated['role'] = $roles[0];
         $validated['password'] = Hash::make($validated['password']);
         $validated['rw_id'] = $validated['rw_id'] ?? '02';
 
         try {
-            User::create($validated);
+            $user = User::create($validated);
+            $user->syncRoles($roles);
+
             return redirect()->route('users.index', ['role' => $request->get('current_role', 'semua')])
-                ->with('success', 'Pengguna baru "' . $validated['name'] . '" berhasil ditambahkan dengan peran ' . $validated['role'] . '.');
+                ->with('success', 'Pengguna baru "' . $user->name . '" berhasil ditambahkan dengan ' . count($roles) . ' peran.');
         } catch (\Throwable $e) {
             return back()->withInput()->with('error', 'Gagal menambahkan pengguna: ' . $e->getMessage());
         }
@@ -94,13 +116,24 @@ class UserController extends Controller
             'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($user->id)],
             'nik' => ['required', 'string', 'size:16', Rule::unique('users', 'nik')->ignore($user->id)],
             'phone' => 'nullable|string|max:20',
-            'role' => 'required|in:warga,petugas_ronda,rt,rw,bhabinkamtibmas',
+            'nama_ibu' => 'nullable|string|max:100',
+            'roles' => 'nullable|array',
+            'roles.*' => 'in:warga,petugas_ronda,rt,rw,bhabinkamtibmas,nakes_puskesmas',
+            'role' => 'nullable|string|in:warga,petugas_ronda,rt,rw,bhabinkamtibmas,nakes_puskesmas',
             'rt_id' => 'nullable|string|max:5',
             'rw_id' => 'nullable|string|max:5',
             'alamat' => 'nullable|string|max:255',
             'no_rumah' => 'nullable|string|max:10',
             'password' => 'nullable|string|min:6',
         ]);
+
+        $roles = $request->input('roles', []);
+        if (empty($roles) && !empty($validated['role'])) {
+            $roles = [$validated['role']];
+        }
+        if (!empty($roles)) {
+            $validated['role'] = $roles[0];
+        }
 
         // Jika password diisi, hash; jika kosong, abaikan
         if (!empty($validated['password'])) {
@@ -113,6 +146,10 @@ class UserController extends Controller
 
         try {
             $user->update($validated);
+            if (!empty($roles)) {
+                $user->syncRoles($roles);
+            }
+
             return redirect()->route('users.index', ['role' => $request->get('current_role', 'semua')])
                 ->with('success', 'Data pengguna "' . $user->name . '" berhasil diperbarui.');
         } catch (\Throwable $e) {

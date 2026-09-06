@@ -47,8 +47,8 @@ class PanicAlertController extends Controller
      */
     public function update(Request $request, $id)
     {
-        // Verifikasi hak akses admin
-        if (!Auth::check() || !in_array(Auth::user()->role, ['admin', 'rt', 'rw', 'bhabinkamtibmas'])) {
+        // Verifikasi hak akses admin / pengurus / nakes
+        if (!Auth::check() || !in_array(Auth::user()->role, ['admin', 'rt', 'rw', 'bhabinkamtibmas', 'nakes_puskesmas'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'Akses ditolak: Hanya Admin / Pengurus RW yang berwenang mengedit riwayat kejadian kentongan.',
@@ -88,8 +88,8 @@ class PanicAlertController extends Controller
      */
     public function destroy(Request $request, $id)
     {
-        // Verifikasi hak akses admin
-        if (!Auth::check() || !in_array(Auth::user()->role, ['admin', 'rt', 'rw', 'bhabinkamtibmas'])) {
+        // Verifikasi hak akses admin / pengurus / nakes
+        if (!Auth::check() || !in_array(Auth::user()->role, ['admin', 'rt', 'rw', 'bhabinkamtibmas', 'nakes_puskesmas'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'Akses ditolak: Hanya Admin / Pengurus RW yang berwenang menghapus riwayat kejadian kentongan.',

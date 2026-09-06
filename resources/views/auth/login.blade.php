@@ -50,6 +50,7 @@
 
         <form action="{{ route('login.post') }}" method="POST" class="space-y-4">
             @csrf
+            <input type="hidden" name="device_id" id="hidden-login-device-id" value="">
 
             <div>
                 <label for="login" class="block text-xs font-bold text-slate-700 mb-1">Email atau NIK (16 Digit)</label>
@@ -78,6 +79,20 @@
                 Masuk ke Sistem
             </button>
         </form>
+
+        <!-- Opsi Ajukan Ganti Perangkat Warga -->
+        <div class="p-3 rounded-2xl bg-amber-50/80 border border-amber-200/80 flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2">
+                <span class="text-base">📱</span>
+                <div>
+                    <span class="text-amber-950 font-bold text-[11px] block">Ganti HP / Perangkat Warga?</span>
+                    <span class="text-amber-700/90 text-[10px] block">1 akun warga dibatasi 1 perangkat terdaftar</span>
+                </div>
+            </div>
+            <a href="{{ route('device.reset') }}" class="px-2.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-[10px] transition shrink-0">
+                Ajukan Reset
+            </a>
+        </div>
 
         <div class="pt-2 border-t border-slate-100 text-center">
             <p class="text-[11px] text-slate-400">
@@ -141,6 +156,17 @@
                 </div>
             </a>
 
+            <!-- 5. Nakes Puskesmas -->
+            <a href="{{ route('login.demo', 'nakes') }}" class="p-2.5 rounded-xl bg-white hover:bg-teal-50 border border-slate-200/80 hover:border-teal-300 transition flex items-center gap-2.5 text-xs shadow-2xs group sm:col-span-2">
+                <div class="w-7 h-7 rounded-lg bg-teal-100 text-teal-700 font-bold flex items-center justify-center shrink-0">
+                    🩺
+                </div>
+                <div>
+                    <p class="font-bold text-slate-900 group-hover:text-teal-700">Nakes Puskesmas</p>
+                    <p class="text-[10px] text-slate-400">Respon Medis Darurat & Layanan Kesehatan Warga</p>
+                </div>
+            </a>
+
         </div>
     </div>
 
@@ -149,6 +175,19 @@
 
 @push('scripts')
 <script>
+    (function initLoginDevice() {
+        let deviceId = localStorage.getItem('jagawarga_device_id');
+        if (!deviceId) {
+            deviceId = 'dev_' + ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+                (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+            );
+            localStorage.setItem('jagawarga_device_id', deviceId);
+        }
+        const devField = document.getElementById('hidden-login-device-id');
+        if (devField) devField.value = deviceId;
+        document.cookie = "jagawarga_device_id=" + deviceId + "; path=/; max-age=" + (60 * 60 * 24 * 365) + "; SameSite=Lax";
+    })();
+
     function togglePasswordVisibility() {
         const passInput = document.getElementById('password');
         const eyeText = document.getElementById('eye-text');

@@ -16,17 +16,26 @@
                 <div>
                     <div class="flex items-center gap-2 flex-wrap">
                         <span class="px-2 py-0.5 rounded-md bg-violet-500/20 text-violet-300 text-[10px] font-extrabold uppercase tracking-wider border border-violet-500/30">
-                            Admin Panel
+                            Admin Panel &bull; Multi-Role
                         </span>
                     </div>
-                    <h1 class="text-lg sm:text-xl font-black tracking-tight mt-1">Manajemen Pengguna Sistem</h1>
-                    <p class="text-xs text-slate-300 mt-0.5">Kelola akun warga, petugas ronda, ketua RT, pengurus RW, dan Bhabinkamtibmas.</p>
+                    <h1 class="text-lg sm:text-xl font-black tracking-tight mt-1">Manajemen Pengguna & Perangkat</h1>
+                    <p class="text-xs text-slate-300 mt-0.5">Kelola akun warga, peran multi-role, dan status ikatan perangkat HP.</p>
                 </div>
             </div>
-            <button type="button" onclick="openModal('modal-tambah')" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md transition cursor-pointer flex items-center gap-2 border border-emerald-500">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-                <span>Tambah Pengguna Baru</span>
-            </button>
+            <div class="flex items-center gap-2 flex-wrap">
+                <a href="{{ route('device.requests.index') }}" class="px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition border border-white/10 flex items-center gap-2">
+                    <span>📱 Permohonan Ganti HP</span>
+                    @php $pendingDevs = \App\Models\DeviceResetRequest::where('status', 'pending')->count(); @endphp
+                    @if($pendingDevs > 0)
+                    <span class="px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[9px] font-black animate-pulse">{{ $pendingDevs }}</span>
+                    @endif
+                </a>
+                <button type="button" onclick="openModal('modal-tambah')" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md transition cursor-pointer flex items-center gap-2 border border-emerald-500">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                    <span>Tambah Pengguna Baru</span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -43,7 +52,7 @@
     @endif
 
     {{-- Statistik Cepat --}}
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
         @php
             $statCards = [
                 ['label' => 'Total Semua', 'value' => $stats['total'], 'icon' => '👥', 'bg' => 'bg-slate-50', 'border' => 'border-slate-200', 'text' => 'text-slate-800', 'role' => 'semua'],
@@ -52,6 +61,7 @@
                 ['label' => 'Ketua RT', 'value' => $stats['rt'], 'icon' => '🏘️', 'bg' => 'bg-emerald-50', 'border' => 'border-emerald-200', 'text' => 'text-emerald-800', 'role' => 'rt'],
                 ['label' => 'Pengurus RW', 'value' => $stats['rw'], 'icon' => '🗺️', 'bg' => 'bg-violet-50', 'border' => 'border-violet-200', 'text' => 'text-violet-800', 'role' => 'rw'],
                 ['label' => 'Bhabinkamtibmas', 'value' => $stats['bhabinkamtibmas'], 'icon' => '⭐', 'bg' => 'bg-indigo-50', 'border' => 'border-indigo-200', 'text' => 'text-indigo-800', 'role' => 'bhabinkamtibmas'],
+                ['label' => 'Nakes Puskesmas', 'value' => $stats['nakes_puskesmas'] ?? 0, 'icon' => '🩺', 'bg' => 'bg-teal-50', 'border' => 'border-teal-200', 'text' => 'text-teal-800', 'role' => 'nakes_puskesmas'],
             ];
         @endphp
         @foreach($statCards as $card)
@@ -70,7 +80,7 @@
         <form action="{{ route('users.index') }}" method="GET" class="flex flex-col sm:flex-row gap-3 items-center">
             <input type="hidden" name="role" value="{{ $filterRole }}">
             <div class="flex-1 w-full">
-                <input type="text" name="q" value="{{ $search }}" placeholder="🔍 Cari nama, email, NIK, nomor HP, atau alamat..." class="w-full text-xs px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-200">
+                <input type="text" name="q" value="{{ $search }}" placeholder="🔍 Cari nama, email, NIK, nomor HP, nama ibu, atau alamat..." class="w-full text-xs px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-200">
             </div>
             <div class="flex gap-2">
                 <button type="submit" class="px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold transition cursor-pointer">Cari</button>
@@ -86,7 +96,7 @@
         <div class="border-b border-slate-100 px-5 py-3.5 flex items-center justify-between">
             <div class="flex items-center gap-2">
                 <span class="px-2 py-0.5 rounded bg-violet-100 text-violet-800 text-[10px] font-extrabold uppercase">Data</span>
-                <h2 class="text-sm font-bold text-slate-900">Daftar Pengguna</h2>
+                <h2 class="text-sm font-bold text-slate-900">Daftar Pengguna Sistem</h2>
                 <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-bold">{{ $users->count() }} orang</span>
             </div>
         </div>
@@ -95,15 +105,14 @@
         <div class="overflow-x-auto">
             <table class="w-full text-xs">
                 <thead>
-                    <tr class="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
+                    <tr class="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] tracking-wider border-b border-slate-100">
                         <th class="text-left px-4 py-3">#</th>
                         <th class="text-left px-4 py-3">Nama Lengkap</th>
-                        <th class="text-left px-4 py-3">NIK</th>
-                        <th class="text-left px-4 py-3">Email</th>
-                        <th class="text-left px-4 py-3">No HP / WA</th>
-                        <th class="text-left px-4 py-3">Peran</th>
-                        <th class="text-left px-4 py-3">RT / RW</th>
-                        <th class="text-left px-4 py-3">Alamat</th>
+                        <th class="text-left px-4 py-3">NIK & Ibu</th>
+                        <th class="text-left px-4 py-3">Email & HP</th>
+                        <th class="text-left px-4 py-3">Peran (Roles)</th>
+                        <th class="text-left px-4 py-3">Perangkat Warga</th>
+                        <th class="text-left px-4 py-3">RT/RW & Alamat</th>
                         <th class="text-center px-4 py-3">Aksi</th>
                     </tr>
                 </thead>
@@ -113,14 +122,7 @@
                         <td class="px-4 py-3 text-slate-400 font-mono">{{ $i + 1 }}</td>
                         <td class="px-4 py-3">
                             <div class="flex items-center gap-2.5">
-                                <div class="w-8 h-8 rounded-full flex items-center justify-center text-white font-black text-[11px] shrink-0
-                                    {{ match($u->role) {
-                                        'rw' => 'bg-violet-600',
-                                        'rt' => 'bg-emerald-600',
-                                        'petugas_ronda' => 'bg-amber-600',
-                                        'bhabinkamtibmas' => 'bg-indigo-600',
-                                        default => 'bg-blue-600'
-                                    } }}">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center text-white font-black text-[11px] shrink-0 bg-violet-600">
                                     {{ strtoupper(substr($u->name, 0, 2)) }}
                                 </div>
                                 <div>
@@ -129,28 +131,54 @@
                                 </div>
                             </div>
                         </td>
-                        <td class="px-4 py-3 font-mono text-slate-600 text-[10px]">{{ $u->nik ?? '-' }}</td>
-                        <td class="px-4 py-3 text-slate-600">{{ $u->email }}</td>
-                        <td class="px-4 py-3 text-slate-600">{{ $u->phone ?? '-' }}</td>
                         <td class="px-4 py-3">
-                            @php
-                                $roleBadge = match($u->role) {
-                                    'rw' => ['bg' => 'bg-violet-100 text-violet-800 border-violet-200', 'label' => 'Pengurus RW'],
-                                    'rt' => ['bg' => 'bg-emerald-100 text-emerald-800 border-emerald-200', 'label' => 'Ketua RT'],
-                                    'petugas_ronda' => ['bg' => 'bg-amber-100 text-amber-800 border-amber-200', 'label' => 'Petugas Ronda'],
-                                    'bhabinkamtibmas' => ['bg' => 'bg-indigo-100 text-indigo-800 border-indigo-200', 'label' => 'Bhabinkamtibmas'],
-                                    default => ['bg' => 'bg-blue-100 text-blue-800 border-blue-200', 'label' => 'Warga'],
-                                };
-                            @endphp
-                            <span class="px-2 py-0.5 rounded-lg text-[10px] font-extrabold border {{ $roleBadge['bg'] }}">{{ $roleBadge['label'] }}</span>
+                            <div class="font-mono text-slate-700 text-[10px] font-bold">{{ $u->nik ?? '-' }}</div>
+                            <div class="text-[10px] text-slate-400">Ibu: {{ $u->nama_ibu ?: '-' }}</div>
                         </td>
-                        <td class="px-4 py-3 text-slate-600">RT {{ $u->rt_id ?? '-' }} / RW {{ $u->rw_id ?? '-' }}</td>
-                        <td class="px-4 py-3 text-slate-500 max-w-[150px] truncate">{{ $u->alamat ?? '-' }}</td>
-                        <td class="px-4 py-3 text-center">
+                        <td class="px-4 py-3">
+                            <div class="text-slate-800 text-[11px]">{{ $u->email }}</div>
+                            <div class="text-[10px] text-slate-500">{{ $u->phone ?? '-' }}</div>
+                        </td>
+                        <td class="px-4 py-3">
+                            <div class="flex flex-wrap gap-1 max-w-xs">
+                                @forelse($u->roles as $r)
+                                <span class="px-1.5 py-0.5 rounded-md text-[9px] font-extrabold border {{ $r->badge_color }}">
+                                    {{ $r->display_name }}
+                                </span>
+                                @empty
+                                <span class="px-1.5 py-0.5 rounded-md text-[9px] font-extrabold border bg-slate-100 text-slate-700">
+                                    {{ strtoupper($u->role) }}
+                                </span>
+                                @endforelse
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            @if($u->registered_device_id)
+                                <div class="flex items-center gap-1.5">
+                                    <span class="inline-flex items-center gap-1 text-emerald-800 text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-200" title="{{ $u->device_info }}">
+                                        <span>📱</span> Terikat
+                                    </span>
+                                    <form action="{{ route('users.reset_device', $u->id) }}" method="POST" class="inline" onsubmit="return confirm('Reset perangkat akun {{ $u->name }}? User dapat mendaftarkan HP baru.')">
+                                        @csrf
+                                        <button type="submit" class="px-1.5 py-0.5 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[9px] font-black transition cursor-pointer" title="Lepas ikatan perangkat">
+                                            Reset
+                                        </button>
+                                    </form>
+                                </div>
+                                <div class="text-[9px] text-slate-400 mt-0.5">{{ $u->device_registered_at?->format('d/m/y H:i') }}</div>
+                            @else
+                                <span class="text-slate-400 text-[10px] italic">Belum Ada HP</span>
+                            @endif
+                        </td>
+                        <td class="px-4 py-3 text-slate-600">
+                            <div class="font-bold text-[10px]">RT {{ $u->rt_id ?? '-' }} / RW {{ $u->rw_id ?? '-' }}</div>
+                            <div class="text-[10px] text-slate-400 truncate max-w-[120px]">{{ $u->alamat ?? '-' }}</div>
+                        </td>
+                        <td class="px-4 py-3 text-center whitespace-nowrap">
                             <div class="flex items-center justify-center gap-1">
                                 <button type="button"
-                                    onclick="editUser({{ json_encode($u) }})"
-                                    class="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 transition cursor-pointer border border-blue-200" title="Edit">
+                                    onclick="editUser({{ json_encode($u->load('roles')) }})"
+                                    class="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 transition cursor-pointer border border-blue-200" title="Edit Pengguna">
                                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                                 </button>
                                 @if(Auth::id() !== $u->id)
@@ -168,22 +196,22 @@
             </table>
         </div>
         @else
-        <div class="p-8 text-center">
-            <p class="text-slate-400 text-sm">Tidak ada pengguna ditemukan{{ $search ? ' untuk pencarian "' . $search . '"' : '' }}.</p>
+        <div class="text-center py-12 text-slate-400">
+            <span class="text-4xl">👥</span>
+            <p class="text-xs font-semibold mt-2">Tidak ada pengguna yang sesuai dengan filter.</p>
         </div>
         @endif
     </div>
-
 </div>
 
-{{-- MODAL: TAMBAH PENGGUNA BARU --}}
+{{-- MODAL: TAMBAH PENGGUNA --}}
 <div id="modal-tambah" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeModal('modal-tambah')"></div>
-    <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-slate-200">
+    <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto border border-slate-200">
         <div class="sticky top-0 bg-white rounded-t-3xl border-b border-slate-100 px-5 py-4 flex items-center justify-between z-10">
             <div>
                 <h3 class="text-sm font-black text-slate-900">Tambah Pengguna Baru</h3>
-                <p class="text-[10px] text-slate-500">Isi data lengkap untuk mendaftarkan pengguna ke sistem JagaWarga.</p>
+                <p class="text-[10px] text-slate-500">Daftarkan akun warga, petugas, atau pengurus RT/RW baru.</p>
             </div>
             <button type="button" onclick="closeModal('modal-tambah')" class="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition cursor-pointer">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -202,6 +230,10 @@
                     <input type="text" name="nik" required maxlength="16" minlength="16" pattern="\d{16}" placeholder="3201010101010001" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-violet-500 font-mono">
                 </div>
                 <div>
+                    <label class="block text-[11px] font-bold text-slate-700 mb-1">Nama Ibu Kandung</label>
+                    <input type="text" name="nama_ibu" placeholder="Verifikasi ganti perangkat" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-violet-500">
+                </div>
+                <div>
                     <label class="block text-[11px] font-bold text-slate-700 mb-1">Email <span class="text-rose-500">*</span></label>
                     <input type="email" name="email" required placeholder="nama@jagawarga.local" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-violet-500">
                 </div>
@@ -209,16 +241,21 @@
                     <label class="block text-[11px] font-bold text-slate-700 mb-1">Nomor WhatsApp / HP</label>
                     <input type="tel" name="phone" placeholder="08xxxxxxxxxx" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-violet-500">
                 </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-700 mb-1">Peran (Role) <span class="text-rose-500">*</span></label>
-                    <select name="role" required class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-violet-500 bg-white">
-                        <option value="warga">🏠 Warga Lingkungan</option>
-                        <option value="petugas_ronda">🛡️ Petugas Ronda</option>
-                        <option value="rt">🏘️ Ketua RT</option>
-                        <option value="rw">🗺️ Pengurus RW</option>
-                        <option value="bhabinkamtibmas">⭐ Bhabinkamtibmas</option>
-                    </select>
+
+                {{-- Multiple Role Selection --}}
+                <div class="sm:col-span-2">
+                    <label class="block text-[11px] font-bold text-slate-700 mb-1.5">Peran Pengguna (Multi-Role) <span class="text-rose-500">*</span></label>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                        @foreach($availableRoles as $r)
+                        <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 hover:border-violet-400 cursor-pointer text-xs transition">
+                            <input type="checkbox" name="roles[]" value="{{ $r->name }}" {{ $r->name === 'warga' ? 'checked' : '' }} class="rounded text-violet-600 focus:ring-violet-500">
+                            <span class="font-bold text-slate-800 text-[11px]">{{ $r->icon }} {{ $r->display_name }}</span>
+                        </label>
+                        @endforeach
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-1">Pengguna dapat memiliki lebih dari 1 peran sekaligus (misal Warga + Petugas Ronda).</p>
                 </div>
+
                 <div>
                     <label class="block text-[11px] font-bold text-slate-700 mb-1">RT</label>
                     <select name="rt_id" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-violet-500 bg-white">
@@ -258,11 +295,11 @@
 {{-- MODAL: EDIT PENGGUNA --}}
 <div id="modal-edit" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeModal('modal-edit')"></div>
-    <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-slate-200">
+    <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto border border-slate-200">
         <div class="sticky top-0 bg-white rounded-t-3xl border-b border-slate-100 px-5 py-4 flex items-center justify-between z-10">
             <div>
-                <h3 class="text-sm font-black text-slate-900">Edit Data Pengguna</h3>
-                <p class="text-[10px] text-slate-500">Perbarui informasi pengguna. Kosongkan password jika tidak ingin mengubah.</p>
+                <h3 class="text-sm font-black text-slate-900">Edit Data Pengguna & Peran</h3>
+                <p class="text-[10px] text-slate-500">Perbarui informasi akun, hak peran (multi-role), dan data keamanan.</p>
             </div>
             <button type="button" onclick="closeModal('modal-edit')" class="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition cursor-pointer">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -282,6 +319,10 @@
                     <input type="text" name="nik" id="edit-nik" required maxlength="16" minlength="16" pattern="\d{16}" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-violet-500 font-mono">
                 </div>
                 <div>
+                    <label class="block text-[11px] font-bold text-slate-700 mb-1">Nama Ibu Kandung</label>
+                    <input type="text" name="nama_ibu" id="edit-nama_ibu" placeholder="Verifikasi ganti perangkat" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-violet-500">
+                </div>
+                <div>
                     <label class="block text-[11px] font-bold text-slate-700 mb-1">Email <span class="text-rose-500">*</span></label>
                     <input type="email" name="email" id="edit-email" required class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-violet-500">
                 </div>
@@ -289,16 +330,20 @@
                     <label class="block text-[11px] font-bold text-slate-700 mb-1">Nomor WhatsApp / HP</label>
                     <input type="tel" name="phone" id="edit-phone" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-violet-500">
                 </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-700 mb-1">Peran (Role) <span class="text-rose-500">*</span></label>
-                    <select name="role" id="edit-role" required class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-violet-500 bg-white">
-                        <option value="warga">🏠 Warga Lingkungan</option>
-                        <option value="petugas_ronda">🛡️ Petugas Ronda</option>
-                        <option value="rt">🏘️ Ketua RT</option>
-                        <option value="rw">🗺️ Pengurus RW</option>
-                        <option value="bhabinkamtibmas">⭐ Bhabinkamtibmas</option>
-                    </select>
+
+                {{-- Edit Multiple Roles --}}
+                <div class="sm:col-span-2">
+                    <label class="block text-[11px] font-bold text-slate-700 mb-1.5">Peran Pengguna (Multi-Role) <span class="text-rose-500">*</span></label>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-200" id="edit-roles-container">
+                        @foreach($availableRoles as $r)
+                        <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 hover:border-violet-400 cursor-pointer text-xs transition">
+                            <input type="checkbox" name="roles[]" value="{{ $r->name }}" id="edit-role-{{ $r->name }}" class="edit-role-checkbox rounded text-violet-600 focus:ring-violet-500">
+                            <span class="font-bold text-slate-800 text-[11px]">{{ $r->icon }} {{ $r->display_name }}</span>
+                        </label>
+                        @endforeach
+                    </div>
                 </div>
+
                 <div>
                     <label class="block text-[11px] font-bold text-slate-700 mb-1">RT</label>
                     <select name="rt_id" id="edit-rt_id" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-violet-500 bg-white">
@@ -369,13 +414,28 @@
         form.action = '/users/' + user.id;
         document.getElementById('edit-name').value = user.name || '';
         document.getElementById('edit-nik').value = user.nik || '';
+        document.getElementById('edit-nama_ibu').value = user.nama_ibu || '';
         document.getElementById('edit-email').value = user.email || '';
         document.getElementById('edit-phone').value = user.phone || '';
-        document.getElementById('edit-role').value = user.role || 'warga';
         document.getElementById('edit-rt_id').value = user.rt_id || '01';
         document.getElementById('edit-rw_id').value = user.rw_id || '02';
         document.getElementById('edit-alamat').value = user.alamat || '';
         document.getElementById('edit-no_rumah').value = user.no_rumah || '';
+
+        // Reset semua checkbox role di modal edit
+        document.querySelectorAll('.edit-role-checkbox').forEach(cb => cb.checked = false);
+
+        // Centang role yang dimiliki oleh user
+        if (user.roles && user.roles.length > 0) {
+            user.roles.forEach(r => {
+                const cb = document.getElementById('edit-role-' + r.name);
+                if (cb) cb.checked = true;
+            });
+        } else if (user.role) {
+            const cb = document.getElementById('edit-role-' + user.role);
+            if (cb) cb.checked = true;
+        }
+
         openModal('modal-edit');
     }
 

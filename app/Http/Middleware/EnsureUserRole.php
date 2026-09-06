@@ -23,25 +23,47 @@ class EnsureUserRole
 
         $user = Auth::user();
 
-        // Jika tidak ada batasan role spesifik, cukup login
+        // 1. Pastikan pengguna telah memilih peran aktif untuk sesi ini
+        if (!session()->has('active_role')) {
+            return redirect()->route('role.select')
+                ->with('warning', 'Silakan pilih peran yang ingin Anda gunakan untuk sesi ini sebelum melanjutkan.');
+        }
+
+        $activeRole = session('active_role');
+
+        // 2. Jika peran aktif adalah 'warga', periksa konsistensi perangkat
+        if ($activeRole === 'warga' && $user->isDeviceRegistered()) {
+            $deviceId = $request->cookie('jagawarga_device_id');
+            if ($deviceId && $user->registered_device_id !== $deviceId) {
+                session()->forget('active_role');
+                return redirect()->route('role.select')
+                    ->with('error', 'Sesi dibatalkan: Perangkat ini tidak cocok dengan perangkat terdaftar akun Warga Anda.');
+            }
+        }
+
+        // 3. Jika tidak ada batasan peran khusus pada rute, izinkan lewat
         if (empty($roles)) {
             return $next($request);
         }
 
-        // Cek apakah role pengguna ada dalam daftar role yang diizinkan
-        if (in_array($user->role, $roles)) {
+        // 4. Periksa apakah peran aktif ada dalam daftar peran yang diizinkan untuk rute ini
+        if (in_array($activeRole, $roles)) {
             return $next($request);
         }
 
-        // Pengalihan cerdas jika role tidak sesuai
+        // 5. Pengalihan cerdas jika peran aktif tidak memiliki hak akses rute tersebut
         if ($user->isWarga()) {
-            return redirect()->route('warga.index')->with('warning', 'Akses dibatasi. Anda diarahkan ke portal warga.');
+            return redirect()->route('warga.index')->with('warning', 'Akses dibatasi. Anda diarahkan ke portal Warga.');
         }
 
         if ($user->isPetugasRonda()) {
-            return redirect()->route('ronda.index')->with('warning', 'Akses dibatasi. Anda diarahkan ke portal petugas ronda.');
+            return redirect()->route('ronda.index')->with('warning', 'Akses dibatasi. Anda diarahkan ke portal Petugas Ronda.');
         }
 
-        return redirect()->route('home')->with('error', 'Anda tidak memiliki hak akses ke halaman tersebut.');
+        if ($user->isPengurus() || $user->isNakes()) {
+            return redirect()->route('dashboard.index')->with('warning', 'Akses dibatasi. Anda diarahkan ke Command Center Pengurus & Nakes.');
+        }
+
+        return redirect()->route('home')->with('error', 'Peran aktif Anda (' . $user->role_badge . ') tidak memiliki izin mengakses halaman tersebut.');
     }
 }

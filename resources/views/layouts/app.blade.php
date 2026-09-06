@@ -116,12 +116,19 @@
                     </a>
                     @endif
 
-                    @if(Auth::user()->isPengurus())
+                    @if(Auth::user()->isPengurus() || Auth::user()->isNakes())
                     <a href="/dashboard" class="px-3 py-1.5 rounded-xl {{ request()->is('dashboard*') ? 'bg-white text-indigo-900 shadow-xs' : 'text-slate-600 hover:text-slate-900' }} transition">
                         Dashboard RW
                     </a>
                     <a href="{{ route('users.index') }}" class="px-3 py-1.5 rounded-xl {{ request()->is('users*') ? 'bg-white text-blue-900 shadow-xs' : 'text-slate-600 hover:text-slate-900' }} transition">
                         Manajemen User
+                    </a>
+                    <a href="{{ route('device.requests.index') }}" class="px-3 py-1.5 rounded-xl {{ request()->is('device-requests*') ? 'bg-white text-amber-900 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900' }} transition flex items-center gap-1.5">
+                        <span>Perangkat</span>
+                        @php $pendingDevs = \App\Models\DeviceResetRequest::where('status', 'pending')->count(); @endphp
+                        @if($pendingDevs > 0)
+                        <span class="px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[9px] font-black animate-pulse">{{ $pendingDevs }}</span>
+                        @endif
                     </a>
                     <a href="{{ route('settings.index') }}" class="px-3 py-1.5 rounded-xl {{ request()->is('settings*') ? 'bg-white text-violet-900 shadow-xs' : 'text-slate-600 hover:text-slate-900' }} transition">
                         Pengaturan
@@ -205,11 +212,59 @@
                     </a>
                 @else
                     <div class="flex items-center gap-2">
-                        <div class="hidden sm:flex items-center gap-2 pl-2 pr-3 py-1 rounded-xl bg-slate-100/90 border border-slate-200 text-xs">
-                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                            <span class="font-bold text-slate-800">{{ Auth::user()->name }}</span>
-                            <span class="text-[10px] px-1.5 py-0.2 rounded bg-violet-100 text-violet-700 font-bold uppercase">{{ Auth::user()->role_badge }}</span>
+                        @php
+                            $userRoles = Auth::user()->roles;
+                        @endphp
+                        <!-- Dropdown Switcher Peran Aktif -->
+                        <div class="relative">
+                            <button id="role-menu-button" type="button" onclick="toggleRoleMenu()" class="flex items-center gap-2 pl-2.5 pr-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 border border-slate-200 text-xs transition cursor-pointer">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                <span class="font-bold text-slate-800 hidden sm:inline">{{ Auth::user()->name }}</span>
+                                <span class="text-[10px] px-2 py-0.5 rounded-md bg-violet-100 text-violet-700 font-extrabold uppercase border border-violet-200 flex items-center gap-1">
+                                    <span>{{ Auth::user()->role_badge }}</span>
+                                    @if($userRoles->count() > 1)
+                                    <svg class="w-3 h-3 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                    @endif
+                                </span>
+                            </button>
+
+                            @if($userRoles->count() > 1)
+                            <div id="role-dropdown" class="hidden absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200/80 py-2 z-50 text-xs animate-in fade-in">
+                                <div class="px-3.5 py-1.5 border-b border-slate-100">
+                                    <span class="text-[10px] uppercase font-extrabold text-slate-400 block tracking-wider">Peran Anda (Multi-Role)</span>
+                                    <span class="text-xs font-bold text-slate-700">Pilih untuk beralih mode:</span>
+                                </div>
+                                <div class="p-1.5 space-y-1">
+                                    @foreach($userRoles as $r)
+                                    <form action="{{ route('role.switch') }}" method="POST">
+                                        @csrf
+                                        <input type="hidden" name="role" value="{{ $r->name }}">
+                                        <button type="submit" class="w-full text-left p-2 rounded-xl transition flex items-center justify-between cursor-pointer {{ session('active_role') === $r->name ? 'bg-emerald-50 text-emerald-900 font-bold border border-emerald-200' : 'hover:bg-slate-50 text-slate-700' }}">
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-base">{{ $r->icon }}</span>
+                                                <div>
+                                                    <span class="block text-xs">{{ $r->display_name }}</span>
+                                                    @if(session('active_role') === $r->name)
+                                                    <span class="text-[9px] text-emerald-600 font-semibold block">Peran Aktif Saat Ini</span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                            @if(session('active_role') === $r->name)
+                                            <span class="text-emerald-600 text-xs font-bold">✓</span>
+                                            @endif
+                                        </button>
+                                    </form>
+                                    @endforeach
+                                </div>
+                                <div class="pt-1 border-t border-slate-100 px-2">
+                                    <a href="{{ route('role.select') }}" class="block text-center py-1 text-[11px] font-bold text-violet-700 hover:underline">
+                                        Buka Layar Pemilihan Peran
+                                    </a>
+                                </div>
+                            </div>
+                            @endif
                         </div>
+
                         <form action="{{ route('logout') }}" method="POST" class="inline">
                             @csrf
                             <button type="submit" title="Keluar dari Akun" class="p-2 rounded-xl text-slate-500 hover:text-rose-600 hover:bg-rose-50 border border-slate-200/80 transition cursor-pointer">
@@ -277,8 +332,8 @@
                 </a>
                 @endif
 
-                <!-- 5. Dashboard RW (Role: rt, rw, bhabinkamtibmas) -->
-                @if(Auth::user()->isPengurus())
+                <!-- 5. Dashboard RW (Role: rt, rw, bhabinkamtibmas, nakes_puskesmas) -->
+                @if(Auth::user()->isPengurus() || Auth::user()->isNakes())
                 <a href="/dashboard" class="flex-1 flex flex-col items-center py-1 {{ request()->is('dashboard*') ? 'text-indigo-700 font-bold' : 'text-slate-500 hover:text-indigo-700' }} transition group">
                     <div class="p-1 rounded-xl group-hover:bg-indigo-50 transition">
                         <svg class="w-5 h-5 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -617,31 +672,17 @@
             if (menu) menu.classList.toggle('hidden');
         }
 
-        function switchRole(role) {
-            localStorage.setItem('jagawarga_role', role);
-            updateRoleUI(role);
-            toggleRoleMenu();
-
-            // Dispatch event agar halaman dinamis dapat merespons perubahan peran
-            window.dispatchEvent(new CustomEvent('role-changed', { detail: { role } }));
-        }
-
-        function updateRoleUI(role) {
-            const label = document.getElementById('active-role-label');
-            const avatar = document.getElementById('role-avatar-letter');
-            
-            const roleConfig = {
-                'warga': { name: 'Peran: Warga', letter: 'W', color: 'bg-emerald-500' },
-                'petugas_ronda': { name: 'Peran: Ronda', letter: 'R', color: 'bg-violet-600' },
-                'rt': { name: 'Peran: RT 01', letter: 'RT', color: 'bg-blue-600' },
-                'rw': { name: 'Peran: RW (Admin)', letter: 'RW', color: 'bg-indigo-600' },
-                'bhabinkamtibmas': { name: 'Peran: Bhabin', letter: 'BK', color: 'bg-amber-600' }
-            };
-
-            const config = roleConfig[role] || roleConfig['warga'];
-            if (label) label.innerText = config.name;
-            if (avatar) avatar.innerText = config.letter;
-        }
+        // Global Device Initialization
+        (function initAppDevice() {
+            let deviceId = localStorage.getItem('jagawarga_device_id');
+            if (!deviceId) {
+                deviceId = 'dev_' + ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+                    (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+                );
+                localStorage.setItem('jagawarga_device_id', deviceId);
+            }
+            document.cookie = "jagawarga_device_id=" + deviceId + "; path=/; max-age=" + (60 * 60 * 24 * 365) + "; SameSite=Lax";
+        })();
 
         // Close dropdown when clicked outside
         document.addEventListener('click', (e) => {
