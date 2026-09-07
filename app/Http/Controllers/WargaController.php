@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\BukuTamu;
 use App\Models\LaporanKejadian;
 use App\Models\PanicAlert;
+use App\Models\PwaDevice;
 use App\Models\RwSetting;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -67,6 +68,27 @@ class WargaController extends Controller
             'catatan' => 'nullable|string',
         ]);
 
+        // KONDISI 1: Verifikasi Akun & NIK Warga Resmi
+        if (!Auth::check()) {
+            return response()->json([
+                'success' => false,
+                'unverified' => true,
+                'requires_login' => true,
+                'message' => 'Aktivasi Kentongan Online ditolak: Anda belum masuk. Tombol hanya dapat digunakan oleh warga yang akun dan NIK-nya telah terverifikasi resmi oleh pengurus lingkungan.',
+            ], 401);
+        }
+
+        $user = Auth::user();
+        if (!$user->isNikVerified()) {
+            return response()->json([
+                'success' => false,
+                'unverified' => true,
+                'nik' => $user->nik,
+                'message' => 'Aktivasi Kentongan Online ditolak: Akun atau NIK Anda (' . ($user->nik ?: 'belum terdaftar') . ') belum terverifikasi oleh pengurus RW/RT. Silakan hubungi pengurus untuk verifikasi identitas Anda.',
+            ], 403);
+        }
+
+        // KONDISI 2: Validasi Izin Lokasi & Batas Radius Geofence
         $setting = RwSetting::getActiveSetting();
         $lat = $validated['latitude'] ?? null;
         $lon = $validated['longitude'] ?? null;
@@ -76,7 +98,7 @@ class WargaController extends Controller
             return response()->json([
                 'success' => false,
                 'location_required' => true,
-                'message' => 'Akses lokasi perangkat belum diizinkan atau koordinat belum diperoleh. Tombol kentongan dinonaktifkan sampai lokasi terverifikasi.',
+                'message' => 'Akses lokasi perangkat belum diizinkan atau koordinat belum diperoleh. Tombol kentongan dinonaktifkan sampai lokasi diperoleh & terverifikasi.',
             ], 422);
         }
 
@@ -102,9 +124,8 @@ class WargaController extends Controller
         try {
             PanicAlert::ensureTableExists();
 
-            $user = Auth::user();
-            $userId = $user?->id;
-            $pelaporNama = $user ? $user->name : 'Warga Lingkungan (Tamu)';
+            $userId = $user->id;
+            $pelaporNama = $user->name . ' (NIK: ' . $user->nik . ')';
 
             try {
                 $alert = PanicAlert::create([
@@ -134,9 +155,15 @@ class WargaController extends Controller
                 }
             }
 
+            // Hitung perangkat PWA sasaran broadcast
+            PwaDevice::ensureTableExists();
+            $pwaInstalledCount = PwaDevice::where('is_pwa_installed', true)->count();
+            $notifReadyCount = PwaDevice::where('notification_granted', true)->count();
+            $targetPwaCount = max(1, $pwaInstalledCount ?: $notifReadyCount ?: PwaDevice::count());
+
             return response()->json([
                 'success' => true,
-                'message' => 'Sinyal kentongan darurat berhasil dicatat dan disiarkan ke seluruh pos ronda & pengurus RW!',
+                'message' => "Sinyal kentongan darurat berhasil dicatat dan disiarkan ke seluruh perangkat PWA warga ({$targetPwaCount} perangkat terdeteksi) & pos ronda!",
                 'alert' => [
                     'id' => $alert->id,
                     'waktu' => $alert->waktu_formatted,
@@ -151,6 +178,13 @@ class WargaController extends Controller
                     'google_maps_url' => $alert->google_maps_url,
                     'pelapor' => $alert->nama_pelapor,
                     'status' => $alert->status,
+                ],
+                'pwa_broadcast' => [
+                    'status' => 'dispatched',
+                    'pwa_devices_target' => $targetPwaCount,
+                    'installed_count' => $pwaInstalledCount,
+                    'notification_ready_count' => $notifReadyCount,
+                    'timestamp' => now()->timestamp,
                 ],
             ]);
         } catch (\Throwable $e) {

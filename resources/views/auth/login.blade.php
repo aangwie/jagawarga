@@ -157,13 +157,41 @@
             </a>
 
             <!-- 5. Nakes Puskesmas -->
-            <a href="{{ route('login.demo', 'nakes') }}" class="p-2.5 rounded-xl bg-white hover:bg-teal-50 border border-slate-200/80 hover:border-teal-300 transition flex items-center gap-2.5 text-xs shadow-2xs group sm:col-span-2">
+            <a href="{{ route('login.demo', 'nakes') }}" class="p-2.5 rounded-xl bg-white hover:bg-teal-50 border border-slate-200/80 hover:border-teal-300 transition flex items-center gap-2.5 text-xs shadow-2xs group">
                 <div class="w-7 h-7 rounded-lg bg-teal-100 text-teal-700 font-bold flex items-center justify-center shrink-0">
                     🩺
                 </div>
                 <div>
                     <p class="font-bold text-slate-900 group-hover:text-teal-700">Nakes Puskesmas</p>
-                    <p class="text-[10px] text-slate-400">Respon Medis Darurat & Layanan Kesehatan Warga</p>
+                    <p class="text-[10px] text-slate-400">Respon Medis Darurat</p>
+                </div>
+            </a>
+
+            <!-- 6. Warga Terverifikasi NIK -->
+            <a href="{{ route('login.demo', 'warga') }}" class="p-2.5 rounded-xl bg-emerald-50/80 hover:bg-emerald-100 border border-emerald-200 hover:border-emerald-300 transition flex items-center gap-2.5 text-xs shadow-2xs group">
+                <div class="w-7 h-7 rounded-lg bg-emerald-600 text-white font-bold flex items-center justify-center shrink-0">
+                    🏠
+                </div>
+                <div>
+                    <p class="font-bold text-emerald-900 group-hover:text-emerald-950 flex items-center gap-1">
+                        <span>Warga Terverifikasi</span>
+                        <span class="text-[9px] bg-emerald-200 text-emerald-900 px-1 rounded font-black">✓ NIK</span>
+                    </p>
+                    <p class="text-[10px] text-emerald-700">Budi Santoso &bull; Kentongan Aktif</p>
+                </div>
+            </a>
+
+            <!-- 7. Warga Belum Verifikasi NIK (Untuk Pengujian) -->
+            <a href="{{ route('login.demo', 'unverified') }}" class="p-2.5 rounded-xl bg-amber-50/80 hover:bg-amber-100 border border-amber-200 hover:border-amber-300 transition flex items-center gap-2.5 text-xs shadow-2xs group sm:col-span-2">
+                <div class="w-7 h-7 rounded-lg bg-amber-500 text-white font-bold flex items-center justify-center shrink-0">
+                    ⚠️
+                </div>
+                <div>
+                    <p class="font-bold text-amber-900 group-hover:text-amber-950 flex items-center gap-1">
+                        <span>Warga Belum Verifikasi NIK</span>
+                        <span class="text-[9px] bg-amber-200 text-amber-900 px-1 rounded font-black">Uji Kunci</span>
+                    </p>
+                    <p class="text-[10px] text-amber-700">Doni &bull; Untuk menguji tombol kentongan terkunci karena NIK belum diverifikasi</p>
                 </div>
             </a>
 

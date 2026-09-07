@@ -187,6 +187,27 @@ class JagaWargaController extends Controller
             'alamat_rumah' => 'nullable|string',
         ]);
 
+        // KONDISI 1: Verifikasi Akun & NIK Warga Resmi
+        if (!auth()->check()) {
+            return response()->json([
+                'success' => false,
+                'unverified' => true,
+                'requires_login' => true,
+                'message' => 'Aktivasi Kentongan Online ditolak: Anda belum masuk. Tombol hanya dapat digunakan oleh warga yang akun dan NIK-nya telah terverifikasi resmi oleh pengurus lingkungan.',
+            ], 401);
+        }
+
+        $user = auth()->user();
+        if (!$user->isNikVerified()) {
+            return response()->json([
+                'success' => false,
+                'unverified' => true,
+                'nik' => $user->nik,
+                'message' => 'Aktivasi Kentongan Online ditolak: Akun atau NIK Anda (' . ($user->nik ?: 'belum terdaftar') . ') belum terverifikasi oleh pengurus RW/RT. Silakan hubungi pengurus untuk verifikasi identitas Anda.',
+            ], 403);
+        }
+
+        // KONDISI 2: Validasi Izin Lokasi & Batas Radius Geofence
         $setting = RwSetting::getActiveSetting();
         $lat = $validated['latitude'] ?? null;
         $lon = $validated['longitude'] ?? null;
@@ -196,7 +217,7 @@ class JagaWargaController extends Controller
             return response()->json([
                 'success' => false,
                 'location_required' => true,
-                'message' => 'Akses lokasi perangkat belum diizinkan atau koordinat belum diperoleh. Tombol kentongan dinonaktifkan sampai lokasi terverifikasi.',
+                'message' => 'Akses lokasi perangkat belum diizinkan atau koordinat belum diperoleh. Tombol kentongan dinonaktifkan sampai lokasi diperoleh & terverifikasi.',
             ], 422);
         }
 
@@ -221,9 +242,8 @@ class JagaWargaController extends Controller
         try {
             PanicAlert::ensureTableExists();
 
-            $user = auth()->user();
-            $userId = $user?->id;
-            $pelaporNama = $user ? $user->name : ($validated['pelapor_nama'] ?? 'Warga Lingkungan (Tamu)');
+            $userId = $user->id;
+            $pelaporNama = $user->name . ' (NIK: ' . $user->nik . ')';
 
             try {
                 $alert = PanicAlert::create([

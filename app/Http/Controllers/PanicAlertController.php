@@ -41,6 +41,104 @@ class PanicAlertController extends Controller
     }
 
     /**
+     * Dapatkan data kentongan aktif terkini untuk sinkronisasi perangkat PWA
+     */
+    public function latestActive(Request $request)
+    {
+        PanicAlert::ensureTableExists();
+
+        // Cari alert dengan status aktif dalam rentang 15 menit terakhir
+        $recentThreshold = now()->subMinutes(15);
+        $alert = PanicAlert::with('user')
+            ->where('status', 'aktif')
+            ->where('created_at', '>=', $recentThreshold)
+            ->latest('id')
+            ->first();
+
+        if (!$alert) {
+            return response()->json([
+                'success' => true,
+                'has_active' => false,
+                'alert' => null,
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'has_active' => true,
+            'alert' => [
+                'id' => $alert->id,
+                'waktu' => $alert->waktu_formatted,
+                'raw_waktu' => $alert->created_at ? $alert->created_at->timestamp : time(),
+                'kategori' => $alert->kategori,
+                'kategori_badge' => $alert->kategori_badge,
+                'kategori_icon' => $alert->kategori_icon,
+                'catatan' => $alert->catatan ?: 'Sinyal bahaya kentongan online',
+                'latitude' => (float)$alert->latitude,
+                'longitude' => (float)$alert->longitude,
+                'koordinat_label' => number_format((float)$alert->latitude, 6) . ', ' . number_format((float)$alert->longitude, 6),
+                'google_maps_url' => $alert->google_maps_url,
+                'pelapor' => $alert->nama_pelapor,
+                'status' => $alert->status,
+            ],
+        ]);
+    }
+
+    /**
+     * Real-time Server-Sent Events (SSE) stream untuk kentongan darurat
+     */
+    public function stream(Request $request)
+    {
+        PanicAlert::ensureTableExists();
+
+        return response()->stream(function () {
+            $lastSentId = 0;
+            $iterations = 0;
+
+            while (!connection_aborted() && $iterations < 10) {
+                $alert = PanicAlert::where('status', 'aktif')
+                    ->where('created_at', '>=', now()->subMinutes(15))
+                    ->latest('id')
+                    ->first();
+
+                if ($alert && $alert->id !== $lastSentId) {
+                    $lastSentId = $alert->id;
+                    $payload = [
+                        'type' => 'PANIC_ALERT',
+                        'alert' => [
+                            'id' => $alert->id,
+                            'waktu' => $alert->waktu_formatted,
+                            'kategori' => $alert->kategori,
+                            'kategori_icon' => $alert->kategori_icon,
+                            'catatan' => $alert->catatan,
+                            'latitude' => (float)$alert->latitude,
+                            'longitude' => (float)$alert->longitude,
+                            'pelapor' => $alert->nama_pelapor,
+                            'status' => $alert->status,
+                            'timestamp' => $alert->created_at ? $alert->created_at->timestamp : time(),
+                        ],
+                    ];
+                    echo "data: " . json_encode($payload) . "\n\n";
+                    if (ob_get_level() > 0) ob_flush();
+                    flush();
+                } else {
+                    echo ": heartbeat\n\n";
+                    if (ob_get_level() > 0) ob_flush();
+                    flush();
+                }
+
+                $iterations++;
+                sleep(2);
+            }
+        }, 200, [
+            'Content-Type' => 'text/event-stream',
+            'Cache-Control' => 'no-cache',
+            'Connection' => 'keep-alive',
+            'X-Accel-Buffering' => 'no',
+        ]);
+    }
+
+    /**
      * Edit / Perbarui Riwayat Kentongan
      * Hak akses: Hanya Admin / Pengurus (role: rt, rw, bhabinkamtibmas)
      * Kolom yang diizinkan diedit: Kategori (Jenis Kejadian) & Catatan (Keterangan)

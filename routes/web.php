@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardRwController;
 use App\Http\Controllers\DeviceResetController;
 use App\Http\Controllers\JagaWargaController;
 use App\Http\Controllers\PanicAlertController;
+use App\Http\Controllers\PwaController;
 use App\Http\Controllers\RondaController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\UserController;
@@ -21,9 +22,16 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [JagaWargaController::class, 'index'])->name('home');
 Route::get('/warga', [WargaController::class, 'index'])->name('warga.index');
 
-// API Publik
+// API Publik Panic & PWA Broadcast
 Route::post('/api/panic', [WargaController::class, 'storePanic'])->name('api.panic');
 Route::get('/api/panic/data', [PanicAlertController::class, 'listJson'])->name('api.panic.list');
+Route::get('/api/panic/latest-active', [PanicAlertController::class, 'latestActive'])->name('api.panic.latest_active');
+Route::get('/api/panic/stream', [PanicAlertController::class, 'stream'])->name('api.panic.stream');
+
+// API PWA Devices
+Route::post('/api/pwa/register-device', [PwaController::class, 'registerDevice'])->name('api.pwa.register');
+Route::get('/api/pwa/status', [PwaController::class, 'status'])->name('api.pwa.status');
+
 Route::post('/api/lapor', [WargaController::class, 'storeLaporan'])->name('api.lapor');
 Route::post('/api/buku-tamu', [WargaController::class, 'storeBukuTamu'])->name('api.buku_tamu');
 Route::get('/api/settings/public', function () {
@@ -94,6 +102,10 @@ Route::middleware(['auth', 'role:rt,rw,bhabinkamtibmas,nakes_puskesmas'])->group
     Route::put('/users/{id}', [UserController::class, 'update'])->name('users.update');
     Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
     Route::post('/users/{id}/reset-device', [DeviceResetController::class, 'resetUserDevice'])->name('users.reset_device');
+    Route::post('/users/{id}/toggle-nik', [UserController::class, 'toggleNikVerification'])->name('users.toggle_nik');
+    Route::get('/users/template/excel', [UserController::class, 'downloadTemplate'])->name('users.template');
+    Route::post('/users/import', [UserController::class, 'import'])->name('users.import');
+    Route::post('/users/bulk-delete', [UserController::class, 'bulkDestroy'])->name('users.bulk_destroy');
 
     // Manajemen Permohonan Ganti Perangkat Warga
     Route::get('/device-requests', [DeviceResetController::class, 'index'])->name('device.requests.index');

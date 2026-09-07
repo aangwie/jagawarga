@@ -22,6 +22,8 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'nik',
+        'is_nik_verified',
+        'nik_verified_at',
         'phone',
         'nama_ibu',
         'email',
@@ -57,7 +59,17 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'device_registered_at' => 'datetime',
+            'is_nik_verified' => 'boolean',
+            'nik_verified_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Cek apakah NIK pengguna telah terverifikasi sah oleh pengurus RW/RT
+     */
+    public function isNikVerified(): bool
+    {
+        return !empty($this->nik) && (bool)($this->is_nik_verified ?? false);
     }
 
     /**

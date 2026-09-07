@@ -129,20 +129,96 @@
                 </button>
             </div>
 
-            <!-- Indikator Geofence Radius RW -->
-            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-emerald-50 text-emerald-800 text-xs font-semibold border border-emerald-200/70">
-                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                <span>Pusat Siaga RW 02 &bull; Radius Geofence: <strong id="home-geofence-radius-label">{{ $rwSetting->panic_radius_meters ?? 300 }} Meter</strong></span>
+            <!-- PANEL 2 KONDISI KESELAMATAN AKTIVASI KENTONGAN ONLINE -->
+            <div class="bg-slate-50/90 rounded-2xl p-3 sm:p-4 border border-slate-200/90 text-left space-y-2.5 max-w-md mx-auto shadow-xs">
+                <div class="flex items-center justify-between border-b border-slate-200/80 pb-2">
+                    <span class="text-[11px] font-extrabold uppercase text-slate-700 tracking-wider flex items-center gap-1.5">
+                        <span>🛡️</span> Syarat Aktivasi Kentongan (2 Kondisi Wajib)
+                    </span>
+                    <span id="overall-condition-badge" class="text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-200">
+                        @if(Auth::check() && Auth::user()->isNikVerified())
+                            Menunggu Lokasi GPS
+                        @else
+                            Wajib Terverifikasi NIK
+                        @endif
+                    </span>
+                </div>
+
+                <!-- Kondisi 1: Warga Terverifikasi NIK -->
+                <div class="flex items-center justify-between gap-2 text-xs">
+                    <div class="flex items-center gap-2">
+                        @if(Auth::check() && Auth::user()->isNikVerified())
+                            <span class="w-5 h-5 rounded-lg bg-emerald-500 text-white flex items-center justify-center font-black text-[10px] shrink-0">✓</span>
+                            <div>
+                                <span class="font-bold text-slate-800 block text-[11px]">1. Verifikasi NIK Warga</span>
+                                <span class="text-[10px] text-emerald-700 block font-medium">{{ Auth::user()->name }} (NIK: <strong class="font-mono">{{ Auth::user()->nik }}</strong>)</span>
+                            </div>
+                        @elseif(Auth::check())
+                            <span class="w-5 h-5 rounded-lg bg-amber-500 text-white flex items-center justify-center font-black text-[10px] shrink-0">⚠️</span>
+                            <div>
+                                <span class="font-bold text-slate-800 block text-[11px]">1. Verifikasi NIK Warga</span>
+                                <span class="text-[10px] text-amber-700 block font-medium">Akun ada, namun NIK belum diverifikasi pengurus RW</span>
+                            </div>
+                        @else
+                            <span class="w-5 h-5 rounded-lg bg-rose-500 text-white flex items-center justify-center font-black text-[10px] shrink-0">🔒</span>
+                            <div>
+                                <span class="font-bold text-slate-800 block text-[11px]">1. Verifikasi NIK Warga</span>
+                                <span class="text-[10px] text-rose-700 block font-medium">Wajib masuk akun warga ber-NIK terverifikasi</span>
+                            </div>
+                        @endif
+                    </div>
+                    <div>
+                        @if(Auth::check() && Auth::user()->isNikVerified())
+                            <span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 shrink-0">TERPENUHI</span>
+                        @elseif(Auth::check())
+                            <span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200 shrink-0">BELUM DIVERIFIKASI</span>
+                        @else
+                            <a href="{{ route('login') }}" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-[10px] shadow-2xs transition shrink-0">
+                                <span>🔑</span> <span>Masuk NIK</span>
+                            </a>
+                        @endif
+                    </div>
+                </div>
+
+                <!-- Kondisi 2: Radius Geofence Lingkungan RW -->
+                <div class="flex items-center justify-between gap-2 text-xs pt-1 border-t border-slate-200/60">
+                    <div class="flex items-center gap-2">
+                        <span id="cond2-icon" class="w-5 h-5 rounded-lg bg-amber-500 text-white flex items-center justify-center font-black text-[10px] shrink-0">📍</span>
+                        <div>
+                            <span class="font-bold text-slate-800 block text-[11px]">2. Radius Geofence RW 02</span>
+                            <span id="cond2-geofence-text" class="text-[10px] text-slate-500 block font-medium">Batas radius: &le; {{ $rwSetting->panic_radius_meters ?? 300 }} Meter dari titik koordinat RW</span>
+                        </div>
+                    </div>
+                    <span id="cond2-geofence-badge" class="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 shrink-0">
+                        MENUNGGU GPS
+                    </span>
+                </div>
             </div>
 
-            <!-- Tombol Utama Panic Button (Nonaktif sampai izin lokasi diperoleh) -->
+            <!-- Tombol Utama Panic Button (Hanya aktif jika 2 KONDISI TERPENUHI) -->
             <div class="py-3 flex justify-center">
                 <button id="main-panic-btn" onclick="handlePanicClick()" class="relative w-36 h-36 sm:w-44 sm:h-44 rounded-full bg-gradient-to-tr from-rose-700 via-rose-600 to-red-500 text-white font-extrabold shadow-2xl shadow-rose-600/50 flex flex-col items-center justify-center gap-1 active:scale-95 transition-all duration-200 cursor-not-allowed opacity-40 grayscale border-4 border-white">
                     <svg id="main-panic-icon" class="w-12 h-12 sm:w-14 sm:h-14 drop-shadow-md" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
-                    <span id="main-panic-title" class="text-xs sm:text-sm font-black tracking-wider uppercase drop-shadow text-center px-2">LOKASI DIBUTUHKAN</span>
-                    <span id="main-panic-subtitle" class="text-[9px] sm:text-[10px] font-medium text-rose-100 uppercase tracking-tight">IZINKAN AKSES LOKASI</span>
+                    <span id="main-panic-title" class="text-xs sm:text-sm font-black tracking-wider uppercase drop-shadow text-center px-2">
+                        @if(!Auth::check())
+                            NIK BELUM VERIFIKASI
+                        @elseif(!Auth::user()->isNikVerified())
+                            NIK BELUM DISETUJUI
+                        @else
+                            LOKASI DIBUTUHKAN
+                        @endif
+                    </span>
+                    <span id="main-panic-subtitle" class="text-[9px] sm:text-[10px] font-medium text-rose-100 uppercase tracking-tight">
+                        @if(!Auth::check())
+                            MASUK DENGAN NIK
+                        @elseif(!Auth::user()->isNikVerified())
+                            HUBUNGI KETUA RT/RW
+                        @else
+                            IZINKAN AKSES LOKASI
+                        @endif
+                    </span>
                 </button>
             </div>
 
@@ -872,6 +948,11 @@
     const rwCenterLat = {{ $rwSetting->center_latitude ?? -6.208800 }};
     const rwCenterLng = {{ $rwSetting->center_longitude ?? 106.845600 }};
     const rwMaxRadius = {{ $rwSetting->panic_radius_meters ?? 300 }};
+    const isUserNikVerified = {{ (Auth::check() && Auth::user()->isNikVerified()) ? 'true' : 'false' }};
+    const isUserLoggedIn = {{ Auth::check() ? 'true' : 'false' }};
+    const currentUserName = "{{ Auth::check() ? addslashes(Auth::user()->name) : '' }}";
+    const currentUserNik = "{{ Auth::check() ? addslashes(Auth::user()->nik ?? '') : '' }}";
+
     let currentHomeLat = null;
     let currentHomeLon = null;
     let locationAcquiredHome = false;
@@ -889,6 +970,111 @@
         return Math.round(R * c);
     }
 
+    // Evaluasi Keseluruhan 2 Kondisi (NIK Terverifikasi & Radius Geofence)
+    function evaluateKentonganConditions() {
+        const panicBtn = document.getElementById('main-panic-btn');
+        const panicTitle = document.getElementById('main-panic-title');
+        const panicSubtitle = document.getElementById('main-panic-subtitle');
+        const overallBadge = document.getElementById('overall-condition-badge');
+        const cond2Icon = document.getElementById('cond2-icon');
+        const cond2Badge = document.getElementById('cond2-geofence-badge');
+        const cond2Text = document.getElementById('cond2-geofence-text');
+
+        // KASUS 1: Kondisi 1 (NIK Verifikasi) GAGAL
+        if (!isUserNikVerified) {
+            if (panicBtn) {
+                panicBtn.classList.add('opacity-40', 'grayscale', 'cursor-not-allowed');
+                panicBtn.classList.remove('panic-pulse');
+            }
+            if (!isUserLoggedIn) {
+                if (panicTitle) panicTitle.innerText = 'NIK BELUM VERIFIKASI';
+                if (panicSubtitle) panicSubtitle.innerText = 'MASUK DENGAN NIK';
+                if (overallBadge) {
+                    overallBadge.className = 'text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 border border-rose-200';
+                    overallBadge.innerText = 'Wajib Terverifikasi NIK';
+                }
+            } else {
+                if (panicTitle) panicTitle.innerText = 'NIK BELUM DISETUJUI';
+                if (panicSubtitle) panicSubtitle.innerText = 'MENUNGGU VERIFIKASI RT';
+                if (overallBadge) {
+                    overallBadge.className = 'text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-200';
+                    overallBadge.innerText = 'NIK Belum Terverifikasi';
+                }
+            }
+            return;
+        }
+
+        // KONDISI 1 LOLOS: Sekarang periksa KONDISI 2 (GPS & Geofence)
+        if (!locationAcquiredHome || currentHomeLat === null || currentHomeLon === null) {
+            if (panicBtn) {
+                panicBtn.classList.add('opacity-40', 'grayscale', 'cursor-not-allowed');
+                panicBtn.classList.remove('panic-pulse');
+            }
+            if (panicTitle) panicTitle.innerText = 'LOKASI DIBUTUHKAN';
+            if (panicSubtitle) panicSubtitle.innerText = 'IZINKAN AKSES LOKASI';
+            if (overallBadge) {
+                overallBadge.className = 'text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-200';
+                overallBadge.innerText = 'Menunggu Lokasi GPS';
+            }
+            return;
+        }
+
+        // Hitung Jarak Terhadap Titik Koordinat RW
+        const distance = calculateHaversineDistance(currentHomeLat, currentHomeLon, rwCenterLat, rwCenterLng);
+
+        if (distance <= rwMaxRadius) {
+            // KEDUA KONDISI TERPENUHI (NIK Terverifikasi + Di Dalam Radius)
+            isHomeWithinGeofence = true;
+            if (panicBtn) {
+                panicBtn.classList.remove('opacity-40', 'grayscale', 'cursor-not-allowed');
+                panicBtn.classList.add('panic-pulse');
+            }
+            if (panicTitle) panicTitle.innerText = 'DARURAT';
+            if (panicSubtitle) panicSubtitle.innerText = 'BUNYIKAN KENTONGAN';
+
+            if (cond2Icon) {
+                cond2Icon.className = 'w-5 h-5 rounded-lg bg-emerald-500 text-white flex items-center justify-center font-black text-[10px] shrink-0';
+                cond2Icon.innerText = '✓';
+            }
+            if (cond2Badge) {
+                cond2Badge.className = 'text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 shrink-0';
+                cond2Badge.innerText = `TERPENUHI (${distance}M)`;
+            }
+            if (cond2Text) {
+                cond2Text.innerHTML = `✅ Dalam jangkauan posko (Jarak: <strong>${distance}m</strong> &le; Batas: ${rwMaxRadius}m)`;
+            }
+            if (overallBadge) {
+                overallBadge.className = 'text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200';
+                overallBadge.innerText = '✅ 2 Syarat Aktif';
+            }
+        } else {
+            // Kondisi 1 Lolos, tapi Kondisi 2 GAGAL (Di Luar Radius)
+            isHomeWithinGeofence = false;
+            if (panicBtn) {
+                panicBtn.classList.add('opacity-40', 'grayscale', 'cursor-not-allowed');
+                panicBtn.classList.remove('panic-pulse');
+            }
+            if (panicTitle) panicTitle.innerText = 'DI LUAR RADIUS';
+            if (panicSubtitle) panicSubtitle.innerText = `TERKUNCI (> ${rwMaxRadius}M)`;
+
+            if (cond2Icon) {
+                cond2Icon.className = 'w-5 h-5 rounded-lg bg-rose-500 text-white flex items-center justify-center font-black text-[10px] shrink-0';
+                cond2Icon.innerText = '✕';
+            }
+            if (cond2Badge) {
+                cond2Badge.className = 'text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-200 shrink-0';
+                cond2Badge.innerText = `DI LUAR RADIUS (${distance}M)`;
+            }
+            if (cond2Text) {
+                cond2Text.innerHTML = `<span class="text-rose-600 font-bold">Di luar jangkauan</span> (Jarak: <strong>${distance}m</strong> &gt; Batas: ${rwMaxRadius}m)`;
+            }
+            if (overallBadge) {
+                overallBadge.className = 'text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 border border-rose-200';
+                overallBadge.innerText = '🚫 Di Luar Radius RW';
+            }
+        }
+    }
+
     // Set status tombol Nonaktif / Terkunci jika lokasi belum ada
     function setGpsDisabledStateHome(reason = 'pending', customMsg = '') {
         locationAcquiredHome = false;
@@ -896,33 +1082,28 @@
         currentHomeLat = null;
         currentHomeLon = null;
 
-        const panicBtn = document.getElementById('main-panic-btn');
-        const panicTitle = document.getElementById('main-panic-title');
-        const panicSubtitle = document.getElementById('main-panic-subtitle');
         const statusSpan = document.getElementById('gps-status-text');
         const btnMinta = document.getElementById('btn-minta-lokasi-home');
-
-        if (panicBtn) {
-            panicBtn.classList.add('opacity-40', 'grayscale', 'cursor-not-allowed');
-            panicBtn.classList.remove('panic-pulse');
-        }
+        const cond2Icon = document.getElementById('cond2-icon');
+        const cond2Badge = document.getElementById('cond2-geofence-badge');
+        const cond2Text = document.getElementById('cond2-geofence-text');
 
         if (btnMinta) btnMinta.classList.remove('hidden');
 
         if (reason === 'denied') {
-            if (panicTitle) panicTitle.innerText = 'LOKASI DITOLAK';
-            if (panicSubtitle) panicSubtitle.innerText = 'BUKA PENGATURAN BROWSER';
-            if (statusSpan) statusSpan.innerHTML = `<span class="text-rose-600 font-bold">🚫 IZIN LOKASI DITOLAK:</span> Tombol kentongan dinonaktifkan. Buka izin lokasi di peramban agar tombol darurat dapat digunakan.`;
+            if (statusSpan) statusSpan.innerHTML = `<span class="text-rose-600 font-bold">🚫 IZIN LOKASI DITOLAK:</span> Buka izin lokasi di peramban agar koordinat dapat diverifikasi.`;
+            if (cond2Badge) {
+                cond2Badge.className = 'text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-200 shrink-0';
+                cond2Badge.innerText = 'IZIN DITOLAK';
+            }
+            if (cond2Text) cond2Text.innerHTML = `<span class="text-rose-600 font-bold">Izin GPS ditolak peramban</span>`;
         } else if (reason === 'unsupported') {
-            if (panicTitle) panicTitle.innerText = 'GPS TIDAK TERSEDIA';
-            if (panicSubtitle) panicSubtitle.innerText = 'PERANGKAT TANPA GPS';
             if (statusSpan) statusSpan.innerHTML = `<span class="text-rose-600 font-bold">⚠️ GPS Tidak Didukung:</span> Peramban tidak mendukung sensor lokasi.`;
         } else {
-            // Pending / Belum diizinkan
-            if (panicTitle) panicTitle.innerText = 'LOKASI DIBUTUHKAN';
-            if (panicSubtitle) panicSubtitle.innerText = 'IZINKAN AKSES LOKASI';
             if (statusSpan) statusSpan.innerHTML = customMsg || `<span class="text-amber-600 font-bold">⚠️ Menunggu Izin Lokasi:</span> Tombol kentongan dinonaktifkan sampai lokasi perangkat diizinkan & terverifikasi.`;
         }
+
+        evaluateKentonganConditions();
     }
 
     function updateGeofenceStatusHome(lat, lon) {
@@ -932,28 +1113,17 @@
 
         const distance = calculateHaversineDistance(lat, lon, rwCenterLat, rwCenterLng);
         const statusSpan = document.getElementById('gps-status-text');
-        const panicBtn = document.getElementById('main-panic-btn');
-        const panicTitle = document.getElementById('main-panic-title');
-        const panicSubtitle = document.getElementById('main-panic-subtitle');
         const btnMinta = document.getElementById('btn-minta-lokasi-home');
 
         if (btnMinta) btnMinta.classList.add('hidden');
 
         if (distance <= rwMaxRadius) {
-            isHomeWithinGeofence = true;
-            statusSpan.innerHTML = `<span class="text-emerald-700 font-bold">✅ DALAM JANGKAUAN</span> (Jarak: <strong>${distance}m</strong> dari Posko, Batas: ${rwMaxRadius}m)`;
-            panicBtn.classList.remove('opacity-40', 'grayscale', 'cursor-not-allowed');
-            panicBtn.classList.add('panic-pulse');
-            panicTitle.innerText = 'DARURAT';
-            panicSubtitle.innerText = 'BUNYIKAN KENTONGAN';
+            if (statusSpan) statusSpan.innerHTML = `<span class="text-emerald-700 font-bold">✅ KOORDINAT TERVERIFIKASI</span> (Jarak: <strong>${distance}m</strong> dari Posko, Batas: ${rwMaxRadius}m)`;
         } else {
-            isHomeWithinGeofence = false;
-            statusSpan.innerHTML = `<span class="text-rose-600 font-bold">🚫 DI LUAR JANGKAUAN</span> (Jarak: <strong>${distance}m</strong> > Batas: ${rwMaxRadius}m)`;
-            panicBtn.classList.add('opacity-40', 'grayscale', 'cursor-not-allowed');
-            panicBtn.classList.remove('panic-pulse');
-            panicTitle.innerText = 'TERKUNCI';
-            panicSubtitle.innerText = 'DI LUAR RADIUS ' + rwMaxRadius + 'M';
+            if (statusSpan) statusSpan.innerHTML = `<span class="text-rose-600 font-bold">🚫 KOORDINAT DI LUAR WILAYAH</span> (Jarak: <strong>${distance}m</strong> > Batas: ${rwMaxRadius}m)`;
         }
+
+        evaluateKentonganConditions();
     }
 
     // Minta izin lokasi fisik dari peramban
@@ -992,15 +1162,27 @@
         }
     }
 
-    // Inisialisasi awal: Default tombol NONAKTIF sampai lokasi diperoleh
+    // Inisialisasi awal evaluasi 2 kondisi
     setGpsDisabledStateHome('pending');
     mintaIzinGpsHome();
 
     // Eksekusi Tombol Darurat Digital (Kentongan Online)
     function handlePanicClick() {
-        // Proteksi jika lokasi belum diizinkan atau belum diperoleh
+        // 1. EVALUASI KONDISI 1: Verifikasi NIK Warga
+        if (!isUserNikVerified) {
+            if (!isUserLoggedIn) {
+                if (confirm("⚠️ VERIFIKASI NIK DIPERLUKAN!\n\nTombol Kentongan Online hanya dapat digunakan jika Anda:\n1. Masuk dengan akun warga yang telah terverifikasi NIK resminya oleh pengurus RW 02.\n2. Berada di dalam batas radius geofence RW 02.\n\nApakah Anda ingin membuka halaman Masuk / Verifikasi sekarang?")) {
+                    window.location.href = "{{ route('login') }}";
+                }
+            } else {
+                alert(`⚠️ NIK BELUM TERVERIFIKASI!\n\nAkun Anda (${currentUserName}) belum memiliki status verifikasi NIK sah dari Pengurus RW/RT.\n\nTombol Kentongan Online dinonaktifkan sampai NIK Anda diverifikasi.`);
+            }
+            return;
+        }
+
+        // 2. EVALUASI KONDISI 2: Izin Lokasi GPS & Radius Geofence
         if (!locationAcquiredHome || currentHomeLat === null || currentHomeLon === null) {
-            alert("⚠️ LOKASI BELUM DIIZINKAN!\n\nTombol Kentongan Online dinonaktifkan karena lokasi perangkat Anda belum diizinkan atau belum diperoleh.\n\nSistem memerlukan izin lokasi GPS untuk memverifikasi Anda berada di dalam wilayah RW 02 demi mencegah alarm palsu. Silakan izinkan akses lokasi pada peramban.");
+            alert("⚠️ LOKASI GPS DIPERLUKAN!\n\nTombol Kentongan Online dinonaktifkan karena koordinat GPS perangkat Anda belum diperoleh.\n\nSistem memerlukan koordinat lokasi untuk memverifikasi Anda berada di dalam wilayah RW 02 demi mencegah alarm palsu.");
             mintaIzinGpsHome();
             return;
         }
@@ -1009,7 +1191,7 @@
 
         // Proteksi sisi klien jika di luar radius
         if (distance > rwMaxRadius) {
-            alert(`⚠️ PERINGATAN: Posisi Anda berada di luar radius keamanan RW 02 (Jarak: ${distance} meter > Batas aktif: ${rwMaxRadius} meter).\n\nTombol panic hanya dapat digunakan di dalam lingkungan wilayah RW 02 demi mencegah alarm palsu. Silakan hubungi pengurus secara langsung.`);
+            alert(`⚠️ PERINGATAN: POSISI DI LUAR RADIUS!\n\nPosisi Anda berada di luar radius keamanan RW 02 (Jarak: ${distance} meter > Batas aktif: ${rwMaxRadius} meter).\n\nTombol Kentongan hanya aktif jika berada di dalam lingkungan wilayah RW 02.`);
             return;
         }
 
@@ -1053,7 +1235,8 @@
                 }
             } else if (res.ok && data.alert) {
                 feedback.className = 'p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold text-center animate-in fade-in';
-                feedback.innerHTML = `🚨 <strong>SINYAL DARURAT BERHASIL DICATAT!</strong> Alarm sirine telah disiarkan ke Pos Ronda & HP pengurus RW.`;
+                const pwaCount = (data.pwa_broadcast && data.pwa_broadcast.pwa_devices_target) ? data.pwa_broadcast.pwa_devices_target : 'seluruh';
+                feedback.innerHTML = `🚨 <strong>SINYAL DARURAT BERHASIL DICATAT!</strong> Notifikasi alarm telah disiarkan ke ${pwaCount} perangkat PWA warga terpasang & Pos Ronda.`;
                 // Tambahkan rekaman kentongan ke DataTables seketika
                 if (typeof tambahBarisKeDataTable === 'function') {
                     tambahBarisKeDataTable(data.alert);

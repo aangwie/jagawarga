@@ -55,6 +55,24 @@
         ⚠️ Mode Offline: Koneksi internet terputus. Data akan disinkronkan saat online kembali.
     </div>
 
+    <!-- PWA Emergency Notification Prompt Banner -->
+    <div id="pwa-notif-prompt" class="hidden fixed top-0 left-0 right-0 z-45 bg-gradient-to-r from-amber-600 via-rose-600 to-red-600 text-white shadow-xl border-b border-rose-700 transition-all duration-300">
+        <div class="max-w-5xl mx-auto px-4 py-2.5 flex flex-col sm:flex-row items-center justify-between gap-2.5">
+            <div class="flex items-center gap-2.5 text-xs sm:text-sm font-semibold">
+                <span class="text-lg animate-bounce">🔔</span>
+                <span><strong>Aktifkan Notifikasi Kentongan PWA:</strong> Agar HP/perangkat Anda langsung membunyikan sirine dan bergetar saat warga membunyikan kentongan darurat RW 02!</span>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <button type="button" onclick="requestPwaNotificationPermission()" class="px-3.5 py-1.5 bg-white text-rose-700 font-extrabold text-xs rounded-xl shadow-md hover:bg-rose-50 transition cursor-pointer flex items-center gap-1.5">
+                    <span>Izinkan Notifikasi</span>
+                </button>
+                <button type="button" onclick="dismissPwaNotifPrompt()" class="text-white/80 hover:text-white text-lg leading-none p-1 cursor-pointer" title="Tutup">
+                    &times;
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Active Emergency Broadcast Banner (Tampil otomatis saat Panic Alert aktif) -->
     <div id="emergency-banner" class="hidden fixed top-0 left-0 right-0 z-40 bg-rose-600 text-white shadow-xl border-b-2 border-rose-800 transition-all duration-300">
         <div class="max-w-5xl mx-auto px-4 py-2.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
@@ -193,6 +211,12 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Tombol Notifikasi PWA (Status & Uji Coba) -->
+                <button id="pwa-notif-btn" type="button" onclick="handlePwaNotifBtnClick()" class="hidden items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 border border-slate-200 text-xs font-bold transition cursor-pointer text-slate-700" title="Status Notifikasi PWA">
+                    <span id="pwa-notif-status-dot" class="w-2 h-2 rounded-full bg-amber-400"></span>
+                    <span id="pwa-notif-btn-text">Notif PWA</span>
+                </button>
 
                 <!-- Tombol Install PWA (Hanya muncul jika browser mendukung) -->
                 <button id="pwa-install-btn" class="hidden items-center gap-1.5 px-3 py-1.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold shadow-sm transition cursor-pointer">
@@ -711,14 +735,309 @@
             document.getElementById('offline-toast').classList.remove('hidden');
         });
 
-        // PWA Service Worker Registration
+        // =========================================================================
+        // PWA NOTIFICATION & REAL-TIME EMERGENCY BROADCAST ENGINE
+        // =========================================================================
+        function getDeviceId() {
+            return localStorage.getItem('jagawarga_device_id') || 'dev_guest';
+        }
+
+        function isPwaMode() {
+            return window.matchMedia('(display-mode: standalone)').matches ||
+                   window.navigator.standalone === true ||
+                   localStorage.getItem('jagawarga_pwa_installed') === 'true';
+        }
+
+        async function registerPwaDevice(installedOverride = null) {
+            const deviceId = getDeviceId();
+            const isInstalled = installedOverride !== null ? installedOverride : isPwaMode();
+            const notifGranted = ('Notification' in window) && Notification.permission === 'granted';
+
+            let pushSubscription = null;
+            if ('serviceWorker' in navigator && 'PushManager' in window) {
+                try {
+                    const reg = await navigator.serviceWorker.ready;
+                    const sub = await reg.pushManager.getSubscription();
+                    if (sub) pushSubscription = sub.toJSON();
+                } catch (e) {
+                    // Push Subscription optional
+                }
+            }
+
+            try {
+                const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                await fetch('/api/pwa/register-device', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrf || ''
+                    },
+                    body: JSON.stringify({
+                        device_id: deviceId,
+                        is_pwa_installed: isInstalled,
+                        notification_granted: notifGranted,
+                        browser_info: (navigator.userAgent || '').substring(0, 250),
+                        push_subscription: pushSubscription
+                    })
+                });
+            } catch (err) {
+                console.warn('Sinkronisasi perangkat PWA ke server:', err);
+            }
+        }
+
+        function updatePwaNotificationUI() {
+            const promptBanner = document.getElementById('pwa-notif-prompt');
+            const notifBtn = document.getElementById('pwa-notif-btn');
+            const notifStatusDot = document.getElementById('pwa-notif-status-dot');
+            const notifBtnText = document.getElementById('pwa-notif-btn-text');
+
+            if (!('Notification' in window)) {
+                if (promptBanner) promptBanner.classList.add('hidden');
+                if (notifBtn) notifBtn.classList.add('hidden');
+                return;
+            }
+
+            if (Notification.permission === 'granted') {
+                if (promptBanner) promptBanner.classList.add('hidden');
+                if (notifBtn) {
+                    notifBtn.classList.remove('hidden');
+                    notifBtn.classList.add('flex');
+                    notifBtn.title = 'Notifikasi PWA Aktif - Klik untuk uji notifikasi kentongan';
+                }
+                if (notifStatusDot) {
+                    notifStatusDot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
+                }
+                if (notifBtnText) notifBtnText.innerText = 'Notif PWA';
+            } else if (Notification.permission === 'default') {
+                const dismissed = sessionStorage.getItem('pwa_notif_prompt_dismissed');
+                if (promptBanner && !dismissed) {
+                    promptBanner.classList.remove('hidden');
+                }
+                if (notifBtn) {
+                    notifBtn.classList.remove('hidden');
+                    notifBtn.classList.add('flex');
+                    notifBtn.title = 'Klik untuk aktifkan notifikasi darurat kentongan PWA';
+                }
+                if (notifStatusDot) {
+                    notifStatusDot.className = 'w-2 h-2 rounded-full bg-amber-400';
+                }
+                if (notifBtnText) notifBtnText.innerText = 'Aktifkan Notif';
+            } else {
+                if (promptBanner) promptBanner.classList.add('hidden');
+                if (notifBtn) {
+                    notifBtn.classList.remove('hidden');
+                    notifBtn.classList.add('flex');
+                    notifBtn.title = 'Notifikasi browser diblokir. Harap izinkan melalui pengaturan browser.';
+                }
+                if (notifStatusDot) {
+                    notifStatusDot.className = 'w-2 h-2 rounded-full bg-rose-500';
+                }
+                if (notifBtnText) notifBtnText.innerText = 'Notif Diblokir';
+            }
+        }
+
+        async function requestPwaNotificationPermission() {
+            if (!('Notification' in window)) {
+                alert('Browser ini tidak mendukung Web Notification API.');
+                return;
+            }
+
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    sessionStorage.removeItem('pwa_notif_prompt_dismissed');
+                    updatePwaNotificationUI();
+                    await registerPwaDevice();
+
+                    displaySystemKentonganNotification({
+                        id: 'welcome',
+                        kategori: 'info',
+                        title: '🟢 Notifikasi Kentongan PWA Aktif!',
+                        body: 'Perangkat Anda kini terhubung ke sistem Kentongan Online RW 02. Anda akan menerima notifikasi darurat seketika saat kentongan dibunyikan oleh warga.',
+                    });
+                } else if (permission === 'denied') {
+                    alert('Izin notifikasi ditolak oleh peramban. Silakan izinkan akses notifikasi melalui ikon pengaturan/gembok di bilah peramban Anda.');
+                    updatePwaNotificationUI();
+                    await registerPwaDevice();
+                }
+            } catch (e) {
+                console.error('Gagal meminta izin notifikasi:', e);
+            }
+        }
+
+        function dismissPwaNotifPrompt() {
+            const promptBanner = document.getElementById('pwa-notif-prompt');
+            if (promptBanner) promptBanner.classList.add('hidden');
+            sessionStorage.setItem('pwa_notif_prompt_dismissed', 'true');
+        }
+
+        function handlePwaNotifBtnClick() {
+            if (Notification.permission === 'granted') {
+                testPwaEmergencyNotification();
+            } else {
+                requestPwaNotificationPermission();
+            }
+        }
+
+        function testPwaEmergencyNotification() {
+            displaySystemKentonganNotification({
+                id: 'test_' + Date.now(),
+                kategori: 'pencurian',
+                pelapor: 'Simulasi Sistem RW 02',
+                catatan: 'Uji Coba Notifikasi Darurat Kentongan PWA',
+                title: '🚨 [UJI COBA] KENTONGAN ONLINE RW 02',
+                body: 'Sinyal darurat kentongan berhasil disiarkan dan diterima di seluruh perangkat PWA terpasang!',
+            });
+            triggerEmergencyAlert('pencurian', 'Uji Coba Bunyi Sirine & Notifikasi PWA');
+        }
+
+        function displaySystemKentonganNotification(alert) {
+            const title = alert.title || '🚨 BAHAYA: KENTONGAN ONLINE RW 02!';
+            const kategori = (alert.kategori || 'darurat').toUpperCase();
+            const pelapor = alert.pelapor || 'Warga RW 02';
+            const catatan = alert.catatan || 'Sinyal bahaya aktif!';
+            const body = alert.body || `[${kategori}] ${pelapor}: ${catatan}. Segera cek posko & bersiap siaga!`;
+
+            const options = {
+                body: body,
+                icon: '/icons/icon.svg',
+                badge: '/icons/icon.svg',
+                vibrate: [500, 200, 500, 200, 500, 200, 1000],
+                tag: 'kentongan-darurat-' + (alert.id || Date.now()),
+                renotify: true,
+                requireInteraction: true,
+                data: {
+                    url: '/#panic-button',
+                    alertId: alert.id,
+                    kategori: alert.kategori
+                },
+                actions: [
+                    { action: 'open', title: '🚨 Buka Lokasi & Siaga' },
+                    { action: 'dismiss', title: 'Tutup' }
+                ]
+            };
+
+            // Kirim ke Service Worker jika aktif (memiliki hak akses system tray & background notification)
+            if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.postMessage({
+                    type: 'SHOW_PANIC_NOTIFICATION',
+                    payload: {
+                        title: title,
+                        body: body,
+                        alertId: alert.id,
+                        kategori: alert.kategori,
+                        options: options
+                    }
+                });
+            } else if ('Notification' in window && Notification.permission === 'granted') {
+                try {
+                    const notif = new Notification(title, options);
+                    notif.onclick = function () {
+                        window.focus();
+                        this.close();
+                    };
+                } catch (e) {
+                    console.warn('Fallback Notification window error:', e);
+                }
+            }
+        }
+
+        let lastProcessedPanicId = parseInt(localStorage.getItem('jagawarga_last_panic_id') || '0');
+
+        function processIncomingEmergencyAlert(alert) {
+            if (!alert || !alert.id) return;
+            const alertId = parseInt(alert.id);
+            if (alertId <= lastProcessedPanicId) return;
+
+            // Catat ID kejadian ini agar tidak memicu notifikasi berulang
+            lastProcessedPanicId = alertId;
+            localStorage.setItem('jagawarga_last_panic_id', lastProcessedPanicId);
+
+            console.log('🚨 Sinyal Kentongan Darurat Diterima:', alert);
+
+            // 1. Tampilkan Notifikasi Sistem PWA
+            if ('Notification' in window && Notification.permission === 'granted') {
+                displaySystemKentonganNotification(alert);
+            }
+
+            // 2. Bunyikan Alarm Sirine Kentongan Web Audio API
+            const detailText = alert.catatan ? `${alert.catatan} (Pelapor: ${alert.pelapor})` : `Pelapor: ${alert.pelapor}`;
+            triggerEmergencyAlert(alert.kategori || 'pencurian', detailText);
+
+            // 3. Tambahkan ke data riwayat tampilan tabel jika tersedia
+            if (typeof tambahBarisKeDataTable === 'function') {
+                tambahBarisKeDataTable(alert);
+            }
+        }
+
+        function initEmergencyBroadcastSync() {
+            // A. Server-Sent Events (SSE) Stream
+            if (window.EventSource) {
+                try {
+                    const sse = new EventSource('/api/panic/stream');
+                    sse.onmessage = function (e) {
+                        try {
+                            const data = JSON.parse(e.data);
+                            if (data && data.type === 'PANIC_ALERT' && data.alert) {
+                                processIncomingEmergencyAlert(data.alert);
+                            }
+                        } catch (err) {}
+                    };
+                } catch (e) {}
+            }
+
+            // B. Polling berkala (setiap 3 detik) untuk keandalan maksimal di semua perangkat
+            const checkActivePanic = async () => {
+                try {
+                    const res = await fetch('/api/panic/latest-active');
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.has_active && data.alert) {
+                            processIncomingEmergencyAlert(data.alert);
+                        }
+                    }
+                } catch (e) {}
+            };
+
+            setTimeout(checkActivePanic, 1000);
+            setInterval(checkActivePanic, 3000);
+        }
+
+        // PWA Service Worker Registration & Messages
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/sw.js')
-                    .then((reg) => console.log('JagaWarga PWA ServiceWorker aktif:', reg.scope))
+                    .then((reg) => {
+                        console.log('JagaWarga PWA ServiceWorker aktif:', reg.scope);
+                        registerPwaDevice();
+                    })
                     .catch((err) => console.log('ServiceWorker registrasi gagal:', err));
+
+                navigator.serviceWorker.addEventListener('message', (event) => {
+                    if (event.data && event.data.type === 'PANIC_NOTIFICATION_CLICKED') {
+                        const data = event.data.data;
+                        if (data && data.kategori) {
+                            triggerEmergencyAlert(data.kategori, 'Darurat terdeteksi dari notifikasi PWA');
+                        }
+                    }
+                });
             });
         }
+
+        // Deteksi Instalasi PWA
+        window.addEventListener('appinstalled', () => {
+            console.log('Aplikasi JagaWarga berhasil diinstall sebagai PWA');
+            localStorage.setItem('jagawarga_pwa_installed', 'true');
+            registerPwaDevice(true);
+        });
+
+        // Inisialisasi status UI notifikasi dan sync darurat
+        document.addEventListener('DOMContentLoaded', () => {
+            updatePwaNotificationUI();
+            registerPwaDevice();
+            initEmergencyBroadcastSync();
+        });
 
         // PWA Install Prompt Handler
         let deferredPrompt;
@@ -739,6 +1058,10 @@
                     deferredPrompt.prompt();
                     const { outcome } = await deferredPrompt.userChoice;
                     console.log(`User respon install PWA: ${outcome}`);
+                    if (outcome === 'accepted') {
+                        localStorage.setItem('jagawarga_pwa_installed', 'true');
+                        registerPwaDevice(true);
+                    }
                     deferredPrompt = null;
                     installBtn.classList.add('hidden');
                 }

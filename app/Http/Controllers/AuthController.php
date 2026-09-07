@@ -260,6 +260,7 @@ class AuthController extends Controller
             'nakes_puskesmas' => 'nakes@jagawarga.local',
             'nakes' => 'nakes@jagawarga.local',
             'warga' => 'warga@jagawarga.local',
+            'unverified' => 'unverified@jagawarga.local',
         ];
 
         $targetEmail = $emailMap[$role] ?? 'warga@jagawarga.local';
@@ -275,7 +276,8 @@ class AuthController extends Controller
                 'bhabin' => '3201010101010098',
                 'nakes_puskesmas' => '3201010101010099',
                 'nakes' => '3201010101010099',
-                'warga' => '3201010101010091',
+                'warga' => '3201010101010001',
+                'unverified' => '3201010101010999',
             ];
 
             $user = User::firstOrCreate(
@@ -287,13 +289,16 @@ class AuthController extends Controller
                         'petugas_ronda', 'ronda' => 'Pak Joko Ronda',
                         'bhabinkamtibmas', 'bhabin' => 'Aiptu Hendro Prasetyo',
                         'nakes', 'nakes_puskesmas' => 'dr. Sarah Amalia (Nakes Puskesmas)',
+                        'unverified' => 'Doni Belum Verifikasi',
                         default => 'Budi Santoso'
                     },
                     'nik' => $nikMap[$role] ?? ('320101010101' . str_pad(random_int(10, 99), 4, '0', STR_PAD_LEFT)),
+                    'is_nik_verified' => $role !== 'unverified',
+                    'nik_verified_at' => $role !== 'unverified' ? now() : null,
                     'phone' => '081234567890',
                     'nama_ibu' => 'Siti Aminah',
                     'password' => bcrypt('password'),
-                    'role' => in_array($role, ['rw', 'rt', 'petugas_ronda', 'bhabinkamtibmas', 'nakes_puskesmas', 'nakes', 'warga']) ? (in_array($role, ['nakes', 'nakes_puskesmas']) ? 'nakes_puskesmas' : $role) : 'petugas_ronda',
+                    'role' => in_array($role, ['rw', 'rt', 'petugas_ronda', 'bhabinkamtibmas', 'nakes_puskesmas', 'nakes', 'warga', 'unverified']) ? (in_array($role, ['nakes', 'nakes_puskesmas']) ? 'nakes_puskesmas' : ($role === 'unverified' ? 'warga' : $role)) : 'petugas_ronda',
                     'rt_id' => '01',
                     'rw_id' => '02',
                 ]
@@ -310,6 +315,7 @@ class AuthController extends Controller
             'ronda' => 'petugas_ronda',
             'bhabin' => 'bhabinkamtibmas',
             'nakes' => 'nakes_puskesmas',
+            'unverified' => 'warga',
             default => $role
         };
 

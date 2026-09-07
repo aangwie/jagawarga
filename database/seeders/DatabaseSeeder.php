@@ -42,6 +42,8 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'Budi Santoso',
                 'nik' => '3201010101010001',
+                'is_nik_verified' => true,
+                'nik_verified_at' => now(),
                 'phone' => '081234567890',
                 'nama_ibu' => 'Siti Aminah',
                 'password' => $password,
@@ -59,6 +61,8 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'Siti Rahayu',
                 'nik' => '3201010101010002',
+                'is_nik_verified' => true,
+                'nik_verified_at' => now(),
                 'phone' => '081234567891',
                 'nama_ibu' => 'Rukmini',
                 'password' => $password,
@@ -70,6 +74,26 @@ class DatabaseSeeder extends Seeder
             ]
         );
         $warga2->syncRoles(['warga']);
+
+        // Akun Warga Contoh Belum Terverifikasi NIK (Untuk Pengujian Penolakan Kentongan)
+        $wargaUnverified = User::updateOrCreate(
+            ['email' => 'unverified@jagawarga.local'],
+            [
+                'name' => 'Doni Belum Verifikasi',
+                'nik' => '3201010101010999',
+                'is_nik_verified' => false,
+                'nik_verified_at' => null,
+                'phone' => '081234567899',
+                'nama_ibu' => 'Sumarni',
+                'password' => $password,
+                'role' => 'warga',
+                'rt_id' => '01',
+                'rw_id' => '02',
+                'alamat' => 'Jl. Kenanga No. 88',
+                'no_rumah' => '88',
+            ]
+        );
+        $wargaUnverified->syncRoles(['warga']);
 
         // Multi-Role: Petugas Ronda sekaligus Warga
         $ronda1 = User::updateOrCreate(
