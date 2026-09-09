@@ -24,6 +24,7 @@ class DashboardRwController extends Controller
             Checkpoint::ensureTableExists();
             PanicAlert::ensureTableExists();
             BukuTamu::ensureTableExists();
+            CctvLingkungan::ensureTableExists();
 
             $totalWarga = User::where('role', 'warga')->count();
             $totalRonda = User::where('role', 'petugas_ronda')->count();
@@ -142,10 +143,7 @@ class DashboardRwController extends Controller
                 ],
             ]);
 
-            $cctvs = collect([
-                (object)['id' => 1, 'nama_lokasi' => 'CCTV 01 - Gapura Utama RW 02', 'rt' => '01', 'status' => 'aktif'],
-                (object)['id' => 2, 'nama_lokasi' => 'CCTV 02 - Simpang Pos Ronda RW 02', 'rt' => '01', 'status' => 'aktif'],
-            ]);
+            $cctvs = collect(array_map(fn($item) => (object)$item, CctvLingkungan::getDefaultData()));
 
             $jadwalList = collect([
                 (object)['id' => 1, 'user' => (object)['name' => 'Budi Santoso', 'phone' => '081234567890'], 'hari' => 'Senin', 'rt_id' => '01'],

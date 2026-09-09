@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'JagaWarga RW - Sistem Keamanan Warga Digital')</title>
+    <title>@yield('title', 'Arum Smart - Sistem Keamanan Warga Digital')</title>
 
     <!-- PWA & Mobile Web App Meta Tags -->
     <meta name="description" content="Sistem Integrasi Keamanan Warga Digital, Kentongan Online & Presensi Patroli Ronda Checkpoint">
@@ -12,7 +12,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="JagaWarga">
+    <meta name="apple-mobile-web-app-title" content="ArumSmart">
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="apple-touch-icon" href="/icons/icon.svg">
@@ -112,7 +112,7 @@
                 </div>
                 <div>
                     <div class="flex items-center gap-1.5">
-                        <span class="font-extrabold text-lg text-slate-900 tracking-tight">JagaWarga</span>
+                        <span class="font-extrabold text-lg text-slate-900 tracking-tight">ArumSmart</span>
                         <span class="text-xs font-bold px-1.5 py-0.5 rounded bg-violet-100 text-violet-700 border border-violet-200">RW 02</span>
                     </div>
                     <p class="text-[11px] font-medium text-emerald-700 leading-none">Keamanan Digital Warga</p>
@@ -408,7 +408,7 @@
         <div class="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
             <div class="flex items-center gap-2">
                 <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                <span class="font-semibold text-slate-700">JagaWarga RW 02</span> &mdash; Sistem Integrasi Keamanan Warga Digital
+                <span class="font-semibold text-slate-700">ArumSmart RW 02</span> &mdash; Sistem Integrasi Keamanan Warga Digital
             </div>
             <div>
                 Kolaborasi Warga, Pos Ronda, Kelurahan & Bhabinkamtibmas
@@ -1009,7 +1009,7 @@
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/sw.js')
                     .then((reg) => {
-                        console.log('JagaWarga PWA ServiceWorker aktif:', reg.scope);
+                        console.log('Arum Smart PWA ServiceWorker aktif:', reg.scope);
                         registerPwaDevice();
                     })
                     .catch((err) => console.log('ServiceWorker registrasi gagal:', err));
@@ -1027,7 +1027,7 @@
 
         // Deteksi Instalasi PWA
         window.addEventListener('appinstalled', () => {
-            console.log('Aplikasi JagaWarga berhasil diinstall sebagai PWA');
+            console.log('Aplikasi ArumSmart berhasil diinstall sebagai PWA');
             localStorage.setItem('jagawarga_pwa_installed', 'true');
             registerPwaDevice(true);
         });

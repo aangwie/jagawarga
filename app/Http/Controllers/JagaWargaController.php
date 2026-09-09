@@ -26,10 +26,17 @@ class JagaWargaController extends Controller
             PanicAlert::ensureTableExists();
             BukuTamu::ensureTableExists();
             Checkpoint::ensureTableExists();
+            CctvLingkungan::ensureTableExists();
             $checkpoints = \Illuminate\Support\Facades\Schema::hasColumn('checkpoints', 'urutan_patroli')
                 ? Checkpoint::orderBy('urutan_patroli')->get()
                 : Checkpoint::orderBy('id')->get();
             $cctvs = CctvLingkungan::where('status', 'aktif')->get();
+            if ($cctvs->isEmpty()) {
+                $cctvs = CctvLingkungan::all();
+            }
+            if ($cctvs->isEmpty()) {
+                $cctvs = collect(array_map(fn($item) => (object)$item, CctvLingkungan::getDefaultData()));
+            }
             $jadwalHariIni = JadwalRonda::with('user')->get();
             $laporanTerbaru = LaporanKejadian::with('user')->latest()->take(5)->get();
             $riwayatKentongan = PanicAlert::with('user')->latest()->get();
@@ -97,22 +104,7 @@ class JagaWargaController extends Controller
                 ],
             ]);
 
-            $cctvs = collect([
-                (object)[
-                    'id' => 1,
-                    'nama_lokasi' => 'CCTV 01 - Gapura Utama RW 02',
-                    'rt' => '01',
-                    'url_stream' => 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
-                    'status' => 'aktif'
-                ],
-                (object)[
-                    'id' => 2,
-                    'nama_lokasi' => 'CCTV 02 - Pertigaan Pos Ronda RW 02',
-                    'rt' => '01',
-                    'url_stream' => 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
-                    'status' => 'aktif'
-                ],
-            ]);
+            $cctvs = collect(array_map(fn($item) => (object)$item, CctvLingkungan::getDefaultData()));
 
             $jadwalHariIni = collect([
                 (object)['user' => (object)['name' => 'Budi Santoso'], 'hari' => 'Senin', 'rt_id' => '01'],

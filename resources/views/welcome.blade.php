@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'JagaWarga RW 02 - Sistem Integrasi Keamanan Warga Digital')
+@section('title', 'Arum Smart - Sistem Integrasi Keamanan Warga Digital')
 
 @push('styles')
 <!-- DataTables CSS & Styling -->
@@ -711,7 +711,7 @@
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            @foreach($cctvs as $cctv)
+            @forelse($cctvs as $cctv)
             <div class="bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 shadow-md">
                 <div class="relative aspect-video bg-slate-900 flex items-center justify-center">
                     <!-- Simulasi Video Feed -->
@@ -731,23 +731,33 @@
                         <span>LIVE</span>
                     </div>
                     <div class="absolute top-3 right-3 px-2 py-0.5 rounded-md bg-slate-800/80 backdrop-blur-xs text-white text-[10px] font-semibold">
-                        RT {{ $cctv->rt }}
+                        RT {{ $cctv->rt ?? '01' }}
                     </div>
                 </div>
 
                 <div class="p-3 bg-slate-900/90 text-white flex items-center justify-between">
                     <div>
-                        <h4 class="text-xs font-bold">{{ $cctv->nama_lokasi }}</h4>
+                        <h4 class="text-xs font-bold">{{ $cctv->nama_lokasi ?? 'Kamera Lingkungan' }}</h4>
                         <p class="text-[10px] text-slate-400">Resolusi HD 1080p &bull; Infra-Red Night Vision</p>
                     </div>
-                    <button onclick="alert('Membuka tampilan layar penuh untuk {{ $cctv->nama_lokasi }}')" class="text-slate-400 hover:text-white p-1 rounded transition cursor-pointer" title="Layar Penuh">
+                    <button onclick="alert('Membuka tampilan layar penuh untuk {{ addslashes($cctv->nama_lokasi ?? 'Kamera Lingkungan') }}')" class="text-slate-400 hover:text-white p-1 rounded transition cursor-pointer" title="Layar Penuh">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
                         </svg>
                     </button>
                 </div>
             </div>
-            @endforeach
+            @empty
+            <div class="col-span-full py-10 px-4 text-center bg-slate-50 border border-dashed border-slate-200 rounded-2xl text-slate-500">
+                <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 mx-auto flex items-center justify-center mb-2">
+                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <p class="text-sm font-semibold text-slate-700">Belum Ada Kamera CCTV Aktif</p>
+                <p class="text-xs text-slate-400 mt-0.5">Daftar kamera IP lingkungan sedang dalam proses konfigurasi jaringan.</p>
+            </div>
+            @endforelse
         </div>
     </section>
 
