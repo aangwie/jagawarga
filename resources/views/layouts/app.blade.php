@@ -158,10 +158,16 @@
             <!-- Status Siaga & Quick Actions -->
             <div class="flex items-center gap-2 sm:gap-3">
                 
-                <!-- Status Lingkungan Beacon -->
-                <div class="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200/80 text-xs font-semibold text-emerald-800">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 radar-beacon"></span>
-                    <span>Wilayah Kondusif</span>
+                <!-- Status Lingkungan Beacon (Icon Pulse Hijau) -->
+                <div class="flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-full bg-emerald-50/90 border border-emerald-200/80 text-emerald-800 text-xs font-semibold shadow-xs" title="Wilayah Kondusif & Siaga 24 Jam">
+                    <span class="relative flex h-2.5 w-2.5">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                    </span>
+                    <svg class="w-4 h-4 text-emerald-600 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <span class="hidden md:inline font-bold text-[11px]">Wilayah Kondusif</span>
                 </div>
 
                 <!-- Tombol Uji Suara Kentongan dengan Dropdown Pilihan Kategori -->
@@ -218,12 +224,13 @@
                     <span id="pwa-notif-btn-text">Notif PWA</span>
                 </button>
 
-                <!-- Tombol Install PWA (Hanya muncul jika browser mendukung) -->
-                <button id="pwa-install-btn" class="hidden items-center gap-1.5 px-3 py-1.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold shadow-sm transition cursor-pointer">
+                <!-- Tombol Install PWA (Di smartphone: icon smartphone saja) -->
+                <button id="pwa-install-btn" type="button" title="Install Aplikasi PWA ke Smartphone" class="flex items-center justify-center gap-1.5 p-2 sm:px-3 sm:py-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white text-xs font-bold shadow-sm transition cursor-pointer">
+                    <!-- Icon Smartphone -->
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                     </svg>
-                    <span>Pasang App</span>
+                    <span class="hidden sm:inline">Install PWA</span>
                 </button>
 
                 <!-- Autentikasi Pengguna: Login / Akun Aktif & Logout -->
@@ -402,6 +409,55 @@
 
         </div>
     </nav>
+
+    <!-- Modal Panduan Install PWA -->
+    <div id="pwa-install-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border border-slate-100 relative animate-in fade-in">
+            <button type="button" onclick="closePwaInstallModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-100 transition cursor-pointer" aria-label="Tutup">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+
+            <div class="text-center mb-4">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-violet-600 to-indigo-600 text-white flex items-center justify-center mx-auto mb-3 shadow-lg shadow-violet-500/30">
+                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <h3 class="text-base font-extrabold text-slate-900">Pasang Aplikasi ArumSmart</h3>
+                <p class="text-xs text-slate-500 mt-1">Akses cepat kentongan online, laporan warga, dan patroli langsung dari layar utama HP Anda.</p>
+            </div>
+
+            <div id="pwa-instructions-ios" class="hidden space-y-2 bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 text-xs text-slate-700">
+                <p class="font-bold text-slate-900 flex items-center gap-1.5">
+                    <span>🍎</span> Panduan iPhone / iPad (Safari):
+                </p>
+                <ol class="list-decimal list-inside space-y-1 text-slate-600 text-[11px]">
+                    <li>Ketuk tombol <strong class="text-slate-900">Bagikan (Share)</strong> di bar bawah Safari.</li>
+                    <li>Gulir & pilih <strong class="text-slate-900">Tambahkan ke Layar Utama</strong>.</li>
+                    <li>Ketuk <strong class="text-violet-600 font-bold">Tambah (Add)</strong> di pojok kanan atas.</li>
+                </ol>
+            </div>
+
+            <div id="pwa-instructions-android" class="hidden space-y-2 bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 text-xs text-slate-700">
+                <p class="font-bold text-slate-900 flex items-center gap-1.5">
+                    <span>🤖</span> Panduan Android (Chrome / Browser):
+                </p>
+                <ol class="list-decimal list-inside space-y-1 text-slate-600 text-[11px]">
+                    <li>Ketuk menu titik tiga (<strong class="text-slate-900">⋮</strong>) di kanan atas browser.</li>
+                    <li>Pilih <strong class="text-slate-900">Instal Aplikasi</strong> atau <strong class="text-slate-900">Tambahkan ke Layar Utama</strong>.</li>
+                    <li>Konfirmasi pemasangan hingga aplikasi muncul di beranda HP.</li>
+                </ol>
+            </div>
+
+            <div class="mt-4 pt-2">
+                <button type="button" onclick="closePwaInstallModal()" class="w-full py-2.5 px-4 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold transition shadow-xs cursor-pointer text-center">
+                    Tutup & Pasang
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Footer untuk Desktop -->
     <footer class="hidden md:block border-t border-slate-200 mt-auto py-6 bg-white/50 text-xs text-slate-500 text-center">
@@ -1039,31 +1095,79 @@
             initEmergencyBroadcastSync();
         });
 
-        // PWA Install Prompt Handler
-        let deferredPrompt;
+        // PWA Install Prompt & Modal Handler
+        let deferredPrompt = null;
         const installBtn = document.getElementById('pwa-install-btn');
+        const installModal = document.getElementById('pwa-install-modal');
+
+        function isIosDevice() {
+            return /iphone|ipad|ipod/i.test(window.navigator.userAgent) || 
+                   (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1);
+        }
+
+        function checkPwaInstallVisibility() {
+            const isInstalled = window.matchMedia('(display-mode: standalone)').matches ||
+                                window.navigator.standalone === true ||
+                                localStorage.getItem('jagawarga_pwa_installed') === 'true';
+            if (isInstalled && installBtn) {
+                installBtn.classList.add('hidden');
+                installBtn.classList.remove('flex');
+            } else if (installBtn) {
+                installBtn.classList.remove('hidden');
+                installBtn.classList.add('flex');
+            }
+        }
 
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            if (installBtn) {
-                installBtn.classList.remove('hidden');
-                installBtn.classList.add('flex');
-            }
+            checkPwaInstallVisibility();
         });
 
+        function openPwaInstallModal() {
+            if (!installModal) return;
+            const isIos = isIosDevice();
+            const iosInst = document.getElementById('pwa-instructions-ios');
+            const androidInst = document.getElementById('pwa-instructions-android');
+            
+            if (isIos) {
+                if (iosInst) iosInst.classList.remove('hidden');
+                if (androidInst) androidInst.classList.add('hidden');
+            } else {
+                if (androidInst) androidInst.classList.remove('hidden');
+                if (iosInst) iosInst.classList.add('hidden');
+            }
+            installModal.classList.remove('hidden');
+            installModal.classList.add('flex');
+        }
+
+        function closePwaInstallModal() {
+            if (installModal) {
+                installModal.classList.add('hidden');
+                installModal.classList.remove('flex');
+            }
+        }
+
         if (installBtn) {
+            checkPwaInstallVisibility();
             installBtn.addEventListener('click', async () => {
                 if (deferredPrompt) {
-                    deferredPrompt.prompt();
-                    const { outcome } = await deferredPrompt.userChoice;
-                    console.log(`User respon install PWA: ${outcome}`);
-                    if (outcome === 'accepted') {
-                        localStorage.setItem('jagawarga_pwa_installed', 'true');
-                        registerPwaDevice(true);
+                    try {
+                        deferredPrompt.prompt();
+                        const { outcome } = await deferredPrompt.userChoice;
+                        console.log(`User respon install PWA: ${outcome}`);
+                        if (outcome === 'accepted') {
+                            localStorage.setItem('jagawarga_pwa_installed', 'true');
+                            registerPwaDevice(true);
+                            installBtn.classList.add('hidden');
+                            installBtn.classList.remove('flex');
+                        }
+                        deferredPrompt = null;
+                    } catch (err) {
+                        openPwaInstallModal();
                     }
-                    deferredPrompt = null;
-                    installBtn.classList.add('hidden');
+                } else {
+                    openPwaInstallModal();
                 }
             });
         }
