@@ -225,7 +225,7 @@
                 </button>
 
                 <!-- Tombol Install PWA (Di smartphone: icon smartphone saja) -->
-                <button id="pwa-install-btn" type="button" title="Install Aplikasi PWA ke Smartphone" class="flex items-center justify-center gap-1.5 p-2 sm:px-3 sm:py-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white text-xs font-bold shadow-sm transition cursor-pointer">
+                <button id="pwa-install-btn" type="button" onclick="handlePwaInstallClick()" title="Install Aplikasi PWA ke Smartphone" class="relative z-10 flex items-center justify-center gap-1.5 p-2 sm:px-3 sm:py-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 active:scale-95 text-white text-xs font-bold shadow-sm transition cursor-pointer">
                     <!-- Icon Smartphone -->
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -411,8 +411,8 @@
     </nav>
 
     <!-- Modal Panduan Install PWA -->
-    <div id="pwa-install-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border border-slate-100 relative animate-in fade-in">
+    <div id="pwa-install-modal" style="display: none;" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs items-center justify-center p-4" onclick="if(event.target === this) closePwaInstallModal()">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border border-slate-100 relative animate-in fade-in" onclick="event.stopPropagation()">
             <button type="button" onclick="closePwaInstallModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-100 transition cursor-pointer" aria-label="Tutup">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -779,10 +779,6 @@
             }
         });
 
-        // Initialize saved role
-        const savedRole = localStorage.getItem('jagawarga_role') || 'warga';
-        updateRoleUI(savedRole);
-
         // Network Status Check
         window.addEventListener('online', () => {
             document.getElementById('offline-toast').classList.add('hidden');
@@ -1097,8 +1093,6 @@
 
         // PWA Install Prompt & Modal Handler
         let deferredPrompt = null;
-        const installBtn = document.getElementById('pwa-install-btn');
-        const installModal = document.getElementById('pwa-install-modal');
 
         function isIosDevice() {
             return /iphone|ipad|ipod/i.test(window.navigator.userAgent) || 
@@ -1106,6 +1100,7 @@
         }
 
         function checkPwaInstallVisibility() {
+            const installBtn = document.getElementById('pwa-install-btn');
             const isInstalled = window.matchMedia('(display-mode: standalone)').matches ||
                                 window.navigator.standalone === true ||
                                 localStorage.getItem('jagawarga_pwa_installed') === 'true';
@@ -1121,56 +1116,64 @@
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
+            console.log('PWA beforeinstallprompt event captured');
             checkPwaInstallVisibility();
         });
 
-        function openPwaInstallModal() {
+        window.openPwaInstallModal = function () {
+            const installModal = document.getElementById('pwa-install-modal');
             if (!installModal) return;
             const isIos = isIosDevice();
             const iosInst = document.getElementById('pwa-instructions-ios');
             const androidInst = document.getElementById('pwa-instructions-android');
             
             if (isIos) {
-                if (iosInst) iosInst.classList.remove('hidden');
-                if (androidInst) androidInst.classList.add('hidden');
+                if (iosInst) { iosInst.classList.remove('hidden'); iosInst.style.display = 'block'; }
+                if (androidInst) { androidInst.classList.add('hidden'); androidInst.style.display = 'none'; }
             } else {
-                if (androidInst) androidInst.classList.remove('hidden');
-                if (iosInst) iosInst.classList.add('hidden');
+                if (androidInst) { androidInst.classList.remove('hidden'); androidInst.style.display = 'block'; }
+                if (iosInst) { iosInst.classList.add('hidden'); iosInst.style.display = 'none'; }
             }
             installModal.classList.remove('hidden');
-            installModal.classList.add('flex');
-        }
+            installModal.style.display = 'flex';
+        };
 
-        function closePwaInstallModal() {
+        window.closePwaInstallModal = function () {
+            const installModal = document.getElementById('pwa-install-modal');
             if (installModal) {
                 installModal.classList.add('hidden');
-                installModal.classList.remove('flex');
+                installModal.style.display = 'none';
             }
-        }
+        };
 
-        if (installBtn) {
-            checkPwaInstallVisibility();
-            installBtn.addEventListener('click', async () => {
-                if (deferredPrompt) {
-                    try {
-                        deferredPrompt.prompt();
-                        const { outcome } = await deferredPrompt.userChoice;
-                        console.log(`User respon install PWA: ${outcome}`);
-                        if (outcome === 'accepted') {
-                            localStorage.setItem('jagawarga_pwa_installed', 'true');
-                            registerPwaDevice(true);
+        window.handlePwaInstallClick = async function () {
+            console.log('Install PWA button clicked, deferredPrompt available:', !!deferredPrompt);
+            if (deferredPrompt) {
+                try {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log(`User respon install PWA: ${outcome}`);
+                    if (outcome === 'accepted') {
+                        localStorage.setItem('jagawarga_pwa_installed', 'true');
+                        registerPwaDevice(true);
+                        const installBtn = document.getElementById('pwa-install-btn');
+                        if (installBtn) {
                             installBtn.classList.add('hidden');
                             installBtn.classList.remove('flex');
                         }
-                        deferredPrompt = null;
-                    } catch (err) {
-                        openPwaInstallModal();
                     }
-                } else {
-                    openPwaInstallModal();
+                    deferredPrompt = null;
+                } catch (err) {
+                    console.warn('Fallback ke modal panduan:', err);
+                    window.openPwaInstallModal();
                 }
-            });
-        }
+            } else {
+                window.openPwaInstallModal();
+            }
+        };
+
+        // Inisialisasi status visibilitas tombol install
+        checkPwaInstallVisibility();
     </script>
 
     @stack('scripts')
