@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jagawarga-pwa-v2';
+const CACHE_NAME = 'arumsmart-pwa-v3';
 const STATIC_ASSETS = [
   '/',
   '/offline.html',

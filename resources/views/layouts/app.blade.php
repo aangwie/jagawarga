@@ -425,7 +425,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                     </svg>
                 </div>
-                <h3 class="text-base font-extrabold text-slate-900">Pasang Aplikasi ArumSmart</h3>
+                <h3 class="text-base font-extrabold text-slate-900">Pasang Aplikasi Arum Smart</h3>
                 <p class="text-xs text-slate-500 mt-1">Akses cepat kentongan online, laporan warga, dan patroli langsung dari layar utama HP Anda.</p>
             </div>
 
