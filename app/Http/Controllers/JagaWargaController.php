@@ -35,7 +35,17 @@ class JagaWargaController extends Controller
                 $cctvs = CctvLingkungan::all();
             }
             if ($cctvs->isEmpty()) {
-                $cctvs = collect(array_map(fn($item) => (object)$item, CctvLingkungan::getDefaultData()));
+                foreach (CctvLingkungan::getDefaultData() as $item) {
+                    CctvLingkungan::create($item);
+                }
+                $cctvs = CctvLingkungan::all();
+            } else {
+                foreach ($cctvs as $c) {
+                    if ($c instanceof CctvLingkungan && str_contains($c->url_stream ?? '', 'mux.dev')) {
+                        $c->url_stream = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4';
+                        $c->save();
+                    }
+                }
             }
             $jadwalHariIni = JadwalRonda::with('user')->get();
             $laporanTerbaru = LaporanKejadian::with('user')->latest()->take(5)->get();

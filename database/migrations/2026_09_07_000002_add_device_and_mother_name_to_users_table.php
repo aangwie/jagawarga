@@ -16,7 +16,7 @@ return new class extends Migration
                 $table->string('nama_ibu', 100)->nullable()->after('phone');
             }
             if (!Schema::hasColumn('users', 'registered_device_id')) {
-                $table->string('registered_device_id', 100)->nullable()->after('no_rumah');
+                $table->string('registered_device_id', 100)->nullable()->after('nama_ibu');
             }
             if (!Schema::hasColumn('users', 'device_info')) {
                 $table->string('device_info', 255)->nullable()->after('registered_device_id');

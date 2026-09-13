@@ -18,14 +18,14 @@
     <!-- Kartu Login Utama -->
     <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-lg space-y-5">
         
-        <div class="text-center space-y-1.5">
-            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center mx-auto shadow-md shadow-emerald-600/30">
-                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
+        <div class="text-center space-y-2">
+            <div class="w-20 h-20 mx-auto drop-shadow-lg transition transform hover:scale-105">
+                <img src="{{ asset('images/logo.png') }}" alt="Logo Arum Smart Desa Sukorejo" class="w-full h-full object-contain">
             </div>
-            <h1 class="text-xl font-black text-slate-900 tracking-tight">Masuk JagaWarga RW</h1>
-            <p class="text-xs text-slate-500">Khusus Petugas Ronda Poskamling & Pengurus RT/RW</p>
+            <div>
+                <h1 class="text-xl font-black text-slate-900 tracking-tight">Arum Smart Sukorejo</h1>
+                <p class="text-xs text-slate-500 mt-0.5">Sistem Keamanan Terpadu, CCTV & Poskamling RW 02</p>
+            </div>
         </div>
 
         @if(session('warning'))

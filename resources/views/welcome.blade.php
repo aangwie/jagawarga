@@ -710,40 +710,89 @@
             <p class="text-xs text-slate-500 mt-0.5">Streaming langsung titik kamera pengawas di gerbang dan lorong utama.</p>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             @forelse($cctvs as $cctv)
-            <div class="bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 shadow-md">
-                <div class="relative aspect-video bg-slate-900 flex items-center justify-center">
-                    <!-- Simulasi Video Feed -->
-                    <div class="text-center p-4">
-                        <div class="w-10 h-10 rounded-full bg-slate-800 text-teal-400 mx-auto flex items-center justify-center mb-2">
-                            <svg class="w-5 h-5 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                            </svg>
-                        </div>
-                        <p class="text-xs font-mono text-teal-300 font-bold">STREAMING ONLINE</p>
-                        <p class="text-[10px] text-slate-400 font-mono mt-0.5">{{ now()->format('d M Y H:i:s') }}</p>
+            <div class="bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 shadow-lg flex flex-col justify-between group transition hover:border-teal-500/50">
+                <!-- CCTV Video Frame with OSD -->
+                <div class="relative aspect-video bg-slate-900 overflow-hidden flex items-center justify-center select-none">
+                    
+                    @if($cctv->isYoutube())
+                        <iframe 
+                            src="{{ $cctv->getYoutubeEmbedUrl() }}" 
+                            class="w-full h-full border-0 pointer-events-none scale-105" 
+                            allow="autoplay; encrypted-media; picture-in-picture" 
+                            tabindex="-1"
+                            title="{{ $cctv->nama_lokasi }}">
+                        </iframe>
+                    @elseif($cctv->isUploadedVideo() || $cctv->isDirectVideo())
+                        <video class="w-full h-full object-cover cctv-video-player" autoplay muted loop playsinline preload="auto" onerror="handleCctvVideoFallback(this)">
+                            <source src="{{ $cctv->getVideoSrc() }}" type="video/mp4">
+                        </video>
+                    @else
+                        <video class="w-full h-full object-cover cctv-video-player" autoplay muted loop playsinline preload="auto" onerror="handleCctvVideoFallback(this)">
+                            <source src="{{ $cctv->url_stream ?? 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4' }}" type="video/mp4">
+                        </video>
+                    @endif
+
+                    <!-- CCTV Overlay: Scanlines & Vignette -->
+                    <div class="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/60 via-transparent to-black/40"></div>
+
+                    <!-- OSD Top Left: Camera ID, RT, Location -->
+                    <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5 px-2 py-0.5 rounded bg-black/70 backdrop-blur-xs text-white font-mono text-[9px] font-bold border border-white/10 shadow">
+                        <span class="text-teal-400">CAM-0{{ $loop->iteration }}</span>
+                        <span class="text-amber-400 font-extrabold">[RT {{ $cctv->rt ?? '01' }}]</span>
+                        <span class="truncate max-w-[120px] text-slate-200 uppercase">{{ $cctv->nama_lokasi }}</span>
                     </div>
 
-                    <!-- Badge Live & RT -->
-                    <div class="absolute top-3 left-3 flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-rose-600/90 text-white text-[10px] font-bold font-mono">
-                        <span class="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
-                        <span>LIVE</span>
+                    <!-- OSD Top Right: LIVE Beacon & REC -->
+                    <div class="absolute top-2.5 right-2.5 flex items-center gap-1">
+                        <div class="flex items-center gap-1 px-2 py-0.5 rounded bg-rose-600/90 backdrop-blur-xs text-white text-[9px] font-black font-mono tracking-wider shadow">
+                            <span class="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
+                            <span>LIVE</span>
+                        </div>
+                        <span class="hidden sm:inline-block px-1.5 py-0.5 rounded bg-black/70 text-[9px] font-mono font-bold text-amber-300 border border-amber-500/30">
+                            REC 24H
+                        </span>
                     </div>
-                    <div class="absolute top-3 right-3 px-2 py-0.5 rounded-md bg-slate-800/80 backdrop-blur-xs text-white text-[10px] font-semibold">
-                        RT {{ $cctv->rt ?? '01' }}
+
+                    <!-- OSD Bottom Left: Logo Arum Smart Desa Sukorejo -->
+                    <div class="absolute bottom-2 left-2.5 flex items-center gap-1.5 px-2 py-0.5 rounded bg-black/60 backdrop-blur-xs text-white text-[9px] font-semibold border border-white/10">
+                        <img src="{{ asset('images/logo.png') }}" alt="Logo" class="w-3.5 h-3.5 object-contain">
+                        <span class="text-[9px] tracking-tight text-slate-200">ARUM SMART</span>
                     </div>
+
+                    <!-- OSD Bottom Right: Jam Digital Asia (GMT+7 / WIB) Real-Time -->
+                    <div class="absolute bottom-2 right-2.5 px-2 py-0.5 rounded bg-black/80 backdrop-blur-xs border border-emerald-500/40 text-emerald-400 font-mono text-[10px] font-bold shadow cctv-live-clock flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span>--:--:-- WIB</span>
+                    </div>
+
+                    <!-- Click to zoom / Fullscreen Overlay Trigger -->
+                    <button type="button" onclick="bukaModalCctvViewer('{{ addslashes($cctv->nama_lokasi) }}', '{{ $cctv->rt ?? '01' }}', '{{ addslashes($cctv->getVideoSrc()) }}', {{ $cctv->isYoutube() ? 'true' : 'false' }}, '{{ addslashes($cctv->getYoutubeEmbedUrl()) }}')" class="absolute inset-0 w-full h-full opacity-0 hover:opacity-100 bg-slate-900/40 backdrop-blur-[2px] transition flex items-center justify-center cursor-pointer group/btn">
+                        <span class="px-3 py-1.5 rounded-xl bg-white/90 text-slate-900 font-bold text-xs shadow-lg transform group-hover/btn:scale-105 transition flex items-center gap-1.5">
+                            <svg class="w-4 h-4 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            <span>Perbesar Tayangan HD</span>
+                        </span>
+                    </button>
                 </div>
 
-                <div class="p-3 bg-slate-900/90 text-white flex items-center justify-between">
-                    <div>
-                        <h4 class="text-xs font-bold">{{ $cctv->nama_lokasi ?? 'Kamera Lingkungan' }}</h4>
-                        <p class="text-[10px] text-slate-400">Resolusi HD 1080p &bull; Infra-Red Night Vision</p>
+                <!-- Footer Card -->
+                <div class="p-3 bg-slate-900 text-white flex items-center justify-between border-t border-slate-800/80">
+                    <div class="truncate mr-2">
+                        <h4 class="text-xs font-bold text-slate-100 truncate">{{ $cctv->nama_lokasi }}</h4>
+                        <p class="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                            <span>Resolusi 1080p HD &bull; Siaga Poskamling</span>
+                        </p>
                     </div>
-                    <button onclick="alert('Membuka tampilan layar penuh untuk {{ addslashes($cctv->nama_lokasi ?? 'Kamera Lingkungan') }}')" class="text-slate-400 hover:text-white p-1 rounded transition cursor-pointer" title="Layar Penuh">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <button type="button" onclick="bukaModalCctvViewer('{{ addslashes($cctv->nama_lokasi) }}', '{{ $cctv->rt ?? '01' }}', '{{ addslashes($cctv->getVideoSrc()) }}', {{ $cctv->isYoutube() ? 'true' : 'false' }}, '{{ addslashes($cctv->getYoutubeEmbedUrl()) }}')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center gap-1 border border-slate-700 cursor-pointer shrink-0" title="Perbesar Layar Penuh">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
                         </svg>
+                        <span class="text-[11px] hidden sm:inline">Zoom</span>
                     </button>
                 </div>
             </div>
@@ -883,6 +932,58 @@
             <button onclick="closeQrScannerModal()" class="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer">
                 Tutup Scanner
             </button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL CCTV HD VIEWER (POPUP MONITOR PENGAWASAN) -->
+<div id="modal-cctv-viewer" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6" onclick="if(event.target === this) tutupModalCctvViewer()">
+    <div class="bg-slate-900 text-white rounded-3xl max-w-4xl w-full overflow-hidden shadow-2xl border border-slate-800 space-y-0 relative animate-in fade-in" onclick="event.stopPropagation()">
+        <!-- Header Modal -->
+        <div class="px-4 py-3 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-xl bg-teal-500/20 text-teal-400 flex items-center justify-center font-bold text-sm border border-teal-500/30">
+                    📹
+                </div>
+                <div>
+                    <h3 id="viewer-cctv-title" class="font-bold text-sm text-white">Kamera CCTV</h3>
+                    <p class="text-[10px] text-slate-400">Pemantauan Lingkungan Real-Time Desa Sukorejo</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="toggleViewerMute()" id="btn-viewer-mute" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 border border-slate-700 transition cursor-pointer">
+                    🔊 Nyalakan Suara
+                </button>
+                <button type="button" onclick="tutupModalCctvViewer()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 text-xl leading-none cursor-pointer">&times;</button>
+            </div>
+        </div>
+
+        <!-- Video Container -->
+        <div class="relative aspect-video bg-black flex items-center justify-center overflow-hidden">
+            <div id="viewer-cctv-media" class="w-full h-full flex items-center justify-center">
+                <!-- Media injected via JS -->
+            </div>
+
+            <!-- OSD Overlays on modal -->
+            <div class="absolute top-3 left-3 flex items-center gap-2 px-2.5 py-1 rounded bg-black/75 backdrop-blur-xs text-white font-mono text-xs font-bold border border-white/10">
+                <span id="viewer-cam-badge" class="text-teal-400">CAM</span>
+                <span class="text-emerald-400 font-bold">&bull; 1080P HD</span>
+            </div>
+
+            <div class="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded bg-rose-600/90 text-white font-mono text-xs font-black tracking-wider shadow">
+                <span class="w-2 h-2 rounded-full bg-white animate-ping"></span>
+                <span>● LIVE [REC 24H]</span>
+            </div>
+
+            <!-- Jam Realtime Asia GMT+7 -->
+            <div class="absolute bottom-3 right-3 px-3 py-1 rounded bg-black/85 backdrop-blur-xs border border-emerald-500/40 text-emerald-400 font-mono text-xs font-bold shadow cctv-live-clock">
+                --:--:-- WIB
+            </div>
+
+            <div class="absolute bottom-3 left-3 flex items-center gap-2 px-2.5 py-1 rounded bg-black/70 backdrop-blur-xs border border-white/10 text-white text-[11px] font-semibold">
+                <img src="{{ asset('images/logo.png') }}" alt="Logo" class="w-4 h-4 object-contain">
+                <span>ARUM SMART DESA SUKOREJO</span>
+            </div>
         </div>
     </div>
 </div>
@@ -1730,5 +1831,97 @@
     function escapeQuote(str) {
         return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
     }
+
+    // ========================================================
+    // CCTV VIEWER & JAM ASIA (GMT+7) REAL-TIME SECARA NYATA
+    // ========================================================
+    let viewerVideoEl = null;
+
+    function bukaModalCctvViewer(nama, rt, videoSrc, isYoutube, youtubeEmbedUrl) {
+        document.getElementById('viewer-cctv-title').textContent = nama;
+        document.getElementById('viewer-cam-badge').textContent = `[RT ${rt}] ${nama}`;
+
+        const mediaContainer = document.getElementById('viewer-cctv-media');
+        mediaContainer.innerHTML = '';
+
+        if (isYoutube) {
+            document.getElementById('btn-viewer-mute').classList.add('hidden');
+            mediaContainer.innerHTML = `
+                <iframe src="${youtubeEmbedUrl}" class="w-full h-full border-0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+            `;
+            viewerVideoEl = null;
+        } else {
+            document.getElementById('btn-viewer-mute').classList.remove('hidden');
+            document.getElementById('btn-viewer-mute').textContent = '🔊 Nyalakan Suara';
+            const vid = document.createElement('video');
+            vid.className = 'w-full h-full object-contain';
+            vid.src = videoSrc;
+            vid.autoplay = true;
+            vid.loop = true;
+            vid.muted = true;
+            vid.playsInline = true;
+            vid.onerror = function() {
+                handleCctvVideoFallback(this);
+            };
+            mediaContainer.appendChild(vid);
+            vid.play().catch(() => {});
+            viewerVideoEl = vid;
+        }
+
+        document.getElementById('modal-cctv-viewer').classList.remove('hidden');
+    }
+
+    function tutupModalCctvViewer() {
+        const modal = document.getElementById('modal-cctv-viewer');
+        modal.classList.add('hidden');
+        const mediaContainer = document.getElementById('viewer-cctv-media');
+        mediaContainer.innerHTML = '';
+        viewerVideoEl = null;
+    }
+
+    function toggleViewerMute() {
+        if (!viewerVideoEl) return;
+        viewerVideoEl.muted = !viewerVideoEl.muted;
+        const btn = document.getElementById('btn-viewer-mute');
+        if (viewerVideoEl.muted) {
+            btn.textContent = '🔊 Nyalakan Suara';
+        } else {
+            btn.textContent = '🔇 Matikan Suara';
+        }
+    }
+
+    function handleCctvVideoFallback(videoEl) {
+        const fallbackVideo = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4';
+        if (videoEl && videoEl.src !== fallbackVideo) {
+            videoEl.src = fallbackVideo;
+            videoEl.play().catch(() => {});
+        }
+    }
+
+    // Ticker Jam Asia (GMT+7 / WIB) Realtime Setiap Detik
+    function updateLiveAsiaClock() {
+        const now = new Date();
+        const options = {
+            timeZone: 'Asia/Jakarta',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        };
+        const formatter = new Intl.DateTimeFormat('id-ID', options);
+        const parts = formatter.formatToParts(now);
+        const p = {};
+        parts.forEach(pt => p[pt.type] = pt.value);
+        const timeStr = `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}:${p.second} WIB (GMT+7)`;
+
+        document.querySelectorAll('.cctv-live-clock').forEach(el => {
+            el.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span><span>${timeStr}</span>`;
+        });
+    }
+    setInterval(updateLiveAsiaClock, 1000);
+    updateLiveAsiaClock();
 </script>
 @endpush

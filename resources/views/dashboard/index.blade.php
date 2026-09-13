@@ -436,6 +436,118 @@
         </div>
     </section>
 
+    <!-- SEKSI 5: MANAJEMEN IP CAMERA & CCTV LINGKUNGAN (LINK STREAM & UPLOAD VIDEO) -->
+    <section id="seksi-manajemen-cctv" class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-sm space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 rounded bg-teal-100 text-teal-800 text-[10px] font-extrabold uppercase tracking-wider">Surveillance & IP Cam</span>
+                    <h2 class="text-base sm:text-lg font-bold text-slate-900">Manajemen CCTV & Kamera Lingkungan Desa Sukorejo</h2>
+                </div>
+                <p class="text-xs text-slate-500 mt-0.5">Kelola streaming kamera warga RW 02. Tambahkan Link Video (YouTube/MP4/HLS) atau Unggah file video pemantauan langsung.</p>
+            </div>
+            <button onclick="openModalCctv()" class="px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-xs transition flex items-center gap-1.5 cursor-pointer self-start sm:self-auto">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                <span>Tambah Kamera CCTV</span>
+            </button>
+        </div>
+
+        <!-- Grid Kamera CCTV -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            @forelse($cctvs as $cctv)
+            <div class="bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 shadow-md flex flex-col justify-between group">
+                <!-- Video / Thumbnail Frame -->
+                <div class="relative aspect-video bg-slate-900 overflow-hidden flex items-center justify-center">
+                    @if($cctv->isYoutube())
+                        <iframe src="{{ $cctv->getYoutubeEmbedUrl() }}" class="w-full h-full border-0 pointer-events-none" allow="autoplay; encrypted-media" tabindex="-1"></iframe>
+                    @elseif($cctv->isUploadedVideo() || $cctv->isDirectVideo())
+                        <video class="w-full h-full object-cover" autoplay muted loop playsinline preload="metadata">
+                            <source src="{{ $cctv->getVideoSrc() }}" type="video/mp4">
+                        </video>
+                    @else
+                        <video class="w-full h-full object-cover" autoplay muted loop playsinline preload="metadata">
+                            <source src="{{ $cctv->url_stream ?? 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4' }}" type="video/mp4">
+                        </video>
+                    @endif
+
+                    <!-- OSD Overlay Top -->
+                    <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-rose-600 text-white text-[9px] font-black font-mono tracking-wider shadow">
+                        <span class="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
+                        <span>● LIVE [REC]</span>
+                    </div>
+
+                    <div class="absolute top-2.5 right-2.5 flex items-center gap-1">
+                        <span class="px-2 py-0.5 rounded-md bg-slate-900/80 backdrop-blur-xs text-white text-[10px] font-bold border border-slate-700">
+                            RT {{ $cctv->rt ?? '01' }}
+                        </span>
+                        @if($cctv->status === 'aktif')
+                            <span class="px-1.5 py-0.5 rounded-md bg-emerald-500/90 text-white text-[9px] font-black uppercase">Aktif</span>
+                        @else
+                            <span class="px-1.5 py-0.5 rounded-md bg-slate-600/90 text-white text-[9px] font-black uppercase">Nonaktif</span>
+                        @endif
+                    </div>
+
+                    <!-- Ticker Jam Realtime Asia GMT+7 -->
+                    <div class="absolute bottom-2 right-2.5 px-2 py-0.5 rounded bg-black/75 backdrop-blur-xs text-emerald-400 font-mono text-[10px] font-bold shadow border border-emerald-500/30 cctv-live-clock">
+                        --:--:-- WIB
+                    </div>
+                </div>
+
+                <!-- Info & Actions Card Bottom -->
+                <div class="p-3 bg-slate-900 text-white space-y-2">
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <h4 class="text-xs font-bold text-slate-100 leading-snug">{{ $cctv->nama_lokasi }}</h4>
+                            <p class="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1">
+                                @if($cctv->tipe === 'upload')
+                                    <span class="text-teal-300 font-semibold">📁 File Video Diunggah</span>
+                                @elseif($cctv->isYoutube())
+                                    <span class="text-rose-300 font-semibold">▶️ YouTube Stream</span>
+                                @else
+                                    <span class="text-blue-300 font-semibold">🔗 Link Video Stream</span>
+                                @endif
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="pt-1.5 border-t border-slate-800 flex items-center justify-between text-xs">
+                        <span class="text-[10px] text-slate-500 font-mono truncate max-w-[140px]" title="{{ $cctv->url_stream ?? $cctv->video_path }}">
+                            {{ basename($cctv->video_path ?? $cctv->url_stream ?? '-') }}
+                        </span>
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            <button onclick='editCctv(@json($cctv))' class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold transition flex items-center gap-1 border border-slate-700 cursor-pointer">
+                                <svg class="w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                                <span>Edit</span>
+                            </button>
+                            <button onclick="hapusCctv({{ $cctv->id }}, '{{ addslashes($cctv->nama_lokasi) }}')" class="px-2 py-1 rounded-lg bg-rose-950/60 hover:bg-rose-900 text-rose-300 text-[11px] font-bold transition flex items-center gap-1 border border-rose-800/60 cursor-pointer">
+                                <svg class="w-3 h-3 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                <span>Hapus</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @empty
+            <div class="col-span-full p-8 text-center bg-slate-50 border border-dashed border-slate-200 rounded-2xl text-slate-500 space-y-2">
+                <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 mx-auto flex items-center justify-center text-xl">
+                    📹
+                </div>
+                <p class="text-sm font-bold text-slate-700">Belum Ada Kamera CCTV Dikonfigurasi</p>
+                <p class="text-xs text-slate-400 max-w-sm mx-auto">Tambahkan link streaming atau upload file rekaman video CCTV lingkungan Sukorejo.</p>
+                <button onclick="openModalCctv()" class="mt-2 px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition inline-flex items-center gap-1 cursor-pointer">
+                    <span>+ Tambah CCTV Sekarang</span>
+                </button>
+            </div>
+            @endforelse
+        </div>
+    </section>
+
 </div>
 
 <!-- MODAL TAMBAH JADWAL RONDA -->
@@ -592,6 +704,110 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                     </svg>
                     <span>Simpan Titik Rawan</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL TAMBAH / EDIT KAMERA CCTV -->
+<div id="modal-cctv" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-6 space-y-4 shadow-2xl border border-slate-100 max-h-[92vh] overflow-y-auto">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center text-base font-bold">
+                    📹
+                </div>
+                <div>
+                    <h3 id="modal-cctv-title" class="font-bold text-sm text-slate-900">Tambah Kamera CCTV</h3>
+                    <p class="text-[11px] text-slate-500">Pilih opsi Link URL video atau Upload file rekaman CCTV.</p>
+                </div>
+            </div>
+            <button onclick="closeModalCctv()" class="text-slate-400 hover:text-slate-700 text-xl leading-none p-1 cursor-pointer">&times;</button>
+        </div>
+
+        <form id="form-cctv" onsubmit="submitCctvForm(event)" class="space-y-4 text-xs" enctype="multipart/form-data">
+            <input type="hidden" id="cctv-id" value="">
+
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">Nama Kamera & Lokasi Penempatan <span class="text-rose-500">*</span></label>
+                <input type="text" id="cctv-nama" required placeholder="Contoh: CCTV 01 - Gapura Masuk Utama RW 02" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 text-xs">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Wilayah RT <span class="text-rose-500">*</span></label>
+                    <select id="cctv-rt" required class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 text-xs">
+                        <option value="01">RT 01</option>
+                        <option value="02">RT 02</option>
+                        <option value="03">RT 03</option>
+                        <option value="04">RT 04</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Status Kamera</label>
+                    <select id="cctv-status" required class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 text-xs">
+                        <option value="aktif">🟢 Aktif (Tayang)</option>
+                        <option value="nonaktif">⚪ Nonaktif (Offline)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Tab Pemilihan Sumber: Link vs Upload -->
+            <div class="space-y-2">
+                <label class="block font-bold text-slate-700">Sumber Video CCTV <span class="text-rose-500">*</span></label>
+                
+                <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-2xl border border-slate-200">
+                    <button type="button" id="tab-cctv-link" onclick="switchCctvSourceTab('link')" class="py-2 px-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 bg-white text-teal-800 shadow-xs cursor-pointer">
+                        <span>🔗 Link Video / Stream</span>
+                    </button>
+                    <button type="button" id="tab-cctv-upload" onclick="switchCctvSourceTab('upload')" class="py-2 px-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900 cursor-pointer">
+                        <span>📁 Upload File Video</span>
+                    </button>
+                </div>
+                <input type="hidden" id="cctv-tipe" value="link">
+            </div>
+
+            <!-- Bagian 1: Input Link URL -->
+            <div id="cctv-box-link" class="p-3.5 rounded-2xl bg-teal-50/50 border border-teal-200/80 space-y-2.5">
+                <label class="block font-bold text-teal-950">URL Stream / Video Link</label>
+                <input type="url" id="cctv-url" placeholder="https://www.youtube.com/watch?v=... atau https://.../cctv.mp4" class="w-full px-3 py-2 rounded-xl border border-teal-200 bg-white focus:outline-none focus:border-teal-500 text-xs font-mono">
+                <p class="text-[11px] text-teal-800">Mendukung: Video YouTube, Live Streaming YouTube, Video MP4, dan stream HLS (.m3u8).</p>
+                
+                <!-- Preset Cepat -->
+                <div class="pt-1">
+                    <span class="text-[10px] font-bold text-slate-500 block mb-1">Preset Video Demo Keamanan:</span>
+                    <div class="flex flex-wrap gap-1.5">
+                        <button type="button" onclick="setCctvPreset('https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4')" class="px-2 py-1 rounded-lg bg-white border border-teal-200 text-[10px] font-semibold text-teal-800 hover:bg-teal-50 transition cursor-pointer">
+                            Gate Entrance (MP4)
+                        </button>
+                        <button type="button" onclick="setCctvPreset('https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4')" class="px-2 py-1 rounded-lg bg-white border border-teal-200 text-[10px] font-semibold text-teal-800 hover:bg-teal-50 transition cursor-pointer">
+                            Pos Ronda Area (MP4)
+                        </button>
+                        <button type="button" onclick="setCctvPreset('https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyBlazes.mp4')" class="px-2 py-1 rounded-lg bg-white border border-teal-200 text-[10px] font-semibold text-teal-800 hover:bg-teal-50 transition cursor-pointer">
+                            Taman Warga (MP4)
+                        </button>
+                        <button type="button" onclick="setCctvPreset('https://www.youtube.com/watch?v=1-iS7LArMPA')" class="px-2 py-1 rounded-lg bg-rose-50 border border-rose-200 text-[10px] font-semibold text-rose-800 hover:bg-rose-100 transition cursor-pointer">
+                            YouTube Live CCTV
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bagian 2: Upload Video File -->
+            <div id="cctv-box-upload" class="hidden p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
+                <label class="block font-bold text-slate-800">Pilih File Rekaman Video</label>
+                <input type="file" id="cctv-file" accept="video/mp4,video/webm,video/ogg,video/quicktime" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3.5 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-teal-600 file:text-white hover:file:bg-teal-700 cursor-pointer">
+                <p class="text-[11px] text-slate-500">Format yang didukung: MP4, WebM, MOV. Ukuran maksimal 50MB.</p>
+                <div id="cctv-current-file-info" class="hidden text-[11px] text-teal-700 font-mono bg-teal-50 p-2 rounded-xl border border-teal-200"></div>
+            </div>
+
+            <div id="cctv-feedback" class="hidden p-3 rounded-2xl text-xs font-semibold text-center animate-in fade-in"></div>
+
+            <div class="pt-2 flex justify-end gap-2 border-t border-slate-100">
+                <button type="button" onclick="closeModalCctv()" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 transition cursor-pointer">Batal</button>
+                <button type="submit" id="btn-submit-cctv" class="px-4 py-2 rounded-xl bg-teal-600 text-white font-bold hover:bg-teal-700 transition cursor-pointer shadow-md flex items-center gap-1.5">
+                    <span id="btn-cctv-text">Simpan Kamera CCTV</span>
                 </button>
             </div>
         </form>
@@ -1219,6 +1435,210 @@
             alert('🚫 Koneksi gagal: ' + (err.message || 'Network Error'));
         });
     }
+
+    // ==========================================
+    // MANAJEMEN CCTV LINGKUNGAN (LINK & UPLOAD)
+    // ==========================================
+    function switchCctvSourceTab(type) {
+        document.getElementById('cctv-tipe').value = type;
+        const tabLink = document.getElementById('tab-cctv-link');
+        const tabUpload = document.getElementById('tab-cctv-upload');
+        const boxLink = document.getElementById('cctv-box-link');
+        const boxUpload = document.getElementById('cctv-box-upload');
+
+        if (type === 'link') {
+            tabLink.className = 'py-2 px-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 bg-white text-teal-800 shadow-xs cursor-pointer';
+            tabUpload.className = 'py-2 px-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900 cursor-pointer';
+            boxLink.classList.remove('hidden');
+            boxUpload.classList.add('hidden');
+        } else {
+            tabUpload.className = 'py-2 px-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 bg-white text-teal-800 shadow-xs cursor-pointer';
+            tabLink.className = 'py-2 px-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900 cursor-pointer';
+            boxUpload.classList.remove('hidden');
+            boxLink.classList.add('hidden');
+        }
+    }
+
+    function setCctvPreset(url) {
+        document.getElementById('cctv-url').value = url;
+    }
+
+    function openModalCctv() {
+        document.getElementById('cctv-id').value = '';
+        document.getElementById('cctv-nama').value = '';
+        document.getElementById('cctv-rt').value = '01';
+        document.getElementById('cctv-status').value = 'aktif';
+        document.getElementById('cctv-url').value = '';
+        document.getElementById('cctv-file').value = '';
+        document.getElementById('cctv-current-file-info').classList.add('hidden');
+        document.getElementById('cctv-current-file-info').innerHTML = '';
+        document.getElementById('modal-cctv-title').textContent = 'Tambah Kamera CCTV';
+        document.getElementById('btn-cctv-text').textContent = 'Simpan Kamera CCTV';
+        const fb = document.getElementById('cctv-feedback');
+        fb.classList.add('hidden');
+        fb.innerHTML = '';
+        switchCctvSourceTab('link');
+        document.getElementById('modal-cctv').classList.remove('hidden');
+    }
+
+    function closeModalCctv() {
+        document.getElementById('modal-cctv').classList.add('hidden');
+    }
+
+    function editCctv(cctv) {
+        document.getElementById('cctv-id').value = cctv.id;
+        document.getElementById('cctv-nama').value = cctv.nama_lokasi;
+        document.getElementById('cctv-rt').value = cctv.rt || '01';
+        document.getElementById('cctv-status').value = cctv.status || 'aktif';
+        document.getElementById('cctv-url').value = cctv.url_stream || '';
+        document.getElementById('cctv-file').value = '';
+        
+        const fileInfo = document.getElementById('cctv-current-file-info');
+        if (cctv.video_path) {
+            fileInfo.classList.remove('hidden');
+            fileInfo.innerHTML = `📹 File video saat ini: <strong>${cctv.video_path}</strong><br><span class="text-[10px] text-slate-500">Pilih file baru jika ingin mengganti video.</span>`;
+        } else {
+            fileInfo.classList.add('hidden');
+            fileInfo.innerHTML = '';
+        }
+
+        document.getElementById('modal-cctv-title').textContent = 'Edit Kamera: ' + cctv.nama_lokasi;
+        document.getElementById('btn-cctv-text').textContent = 'Simpan Perubahan';
+        const fb = document.getElementById('cctv-feedback');
+        fb.classList.add('hidden');
+        fb.innerHTML = '';
+
+        if (cctv.tipe === 'upload') {
+            switchCctvSourceTab('upload');
+        } else {
+            switchCctvSourceTab('link');
+        }
+
+        document.getElementById('modal-cctv').classList.remove('hidden');
+    }
+
+    function submitCctvForm(e) {
+        e.preventDefault();
+        const cctvId = document.getElementById('cctv-id').value;
+        const isEdit = !!cctvId;
+        const feedback = document.getElementById('cctv-feedback');
+        const btn = document.getElementById('btn-submit-cctv');
+
+        const formData = new FormData();
+        formData.append('nama_lokasi', document.getElementById('cctv-nama').value);
+        formData.append('rt', document.getElementById('cctv-rt').value);
+        formData.append('status', document.getElementById('cctv-status').value);
+        
+        const tipe = document.getElementById('cctv-tipe').value;
+        formData.append('tipe', tipe);
+
+        if (tipe === 'link') {
+            const url = document.getElementById('cctv-url').value;
+            if (!url) {
+                alert('Silakan masukkan link URL video atau stream CCTV!');
+                return;
+            }
+            formData.append('url_stream', url);
+        } else {
+            const fileInput = document.getElementById('cctv-file');
+            if (fileInput.files.length > 0) {
+                formData.append('video_file', fileInput.files[0]);
+            } else if (!isEdit) {
+                alert('Silakan pilih file video MP4/WebM untuk diunggah!');
+                return;
+            }
+        }
+
+        feedback.innerHTML = '⏳ Sedang mengunggah & memproses data CCTV...';
+        feedback.className = 'p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-semibold text-center';
+        feedback.classList.remove('hidden');
+        btn.disabled = true;
+
+        const targetUrl = isEdit ? `/api/cctv/${cctvId}` : '/api/cctv';
+
+        fetch(targetUrl, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken
+            },
+            body: formData
+        })
+        .then(async (res) => {
+            const data = await res.json();
+            btn.disabled = false;
+            if (res.ok && data.success) {
+                feedback.innerHTML = `✅ <strong>${data.message}</strong>`;
+                feedback.className = 'p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold text-center';
+                setTimeout(() => {
+                    closeModalCctv();
+                    window.location.reload();
+                }, 1200);
+            } else {
+                feedback.innerHTML = `🚫 <strong>GAGAL:</strong> ${data.message || 'Terjadi kesalahan saat menyimpan.'}`;
+                feedback.className = 'p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-semibold text-center';
+            }
+        })
+        .catch((err) => {
+            btn.disabled = false;
+            feedback.innerHTML = `🚫 <strong>KONEKSI GAGAL:</strong> ${err.message || 'Network Error'}`;
+            feedback.className = 'p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-semibold text-center';
+        });
+    }
+
+    function hapusCctv(id, nama) {
+        if (!confirm(`Yakin ingin menghapus kamera CCTV "${nama}"?\n\nKamera ini akan dihapus dari sistem pengawasan warga RW 02.`)) {
+            return;
+        }
+
+        fetch(`/api/cctv/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken
+            }
+        })
+        .then(async (res) => {
+            const data = await res.json();
+            if (res.ok && data.success) {
+                alert('✅ ' + data.message);
+                window.location.reload();
+            } else {
+                alert('🚫 Gagal menghapus: ' + (data.message || 'Terjadi kesalahan.'));
+            }
+        })
+        .catch((err) => {
+            alert('🚫 Koneksi gagal: ' + (err.message || 'Network Error'));
+        });
+    }
+
+    // ========================================================
+    // TICKER WAKTU ASIA (GMT+7 / WIB) REALTIME SETIAP DETIK
+    // ========================================================
+    function updateCctvClocks() {
+        const now = new Date();
+        const options = {
+            timeZone: 'Asia/Jakarta',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        };
+        const formatter = new Intl.DateTimeFormat('id-ID', options);
+        const parts = formatter.formatToParts(now);
+        const p = {};
+        parts.forEach(pt => p[pt.type] = pt.value);
+        const timeStr = `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}:${p.second} WIB`;
+
+        document.querySelectorAll('.cctv-live-clock').forEach(el => {
+            el.textContent = timeStr;
+        });
+    }
+    setInterval(updateCctvClocks, 1000);
+    updateCctvClocks();
 
 </script>
 @endpush

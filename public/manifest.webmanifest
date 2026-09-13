@@ -1,26 +1,31 @@
 {
-  "name": "Arum Smart - Sistem Keamanan Warga Digital",
-  "short_name": "Arum Smart",
-  "description": "Sistem Integrasi Keamanan Warga Digital, Kentongan Online & Presensi Ronda Checkpoint",
+  "name": "Arum Smart - Desa Sukorejo",
+  "short_name": "ArumSmart",
+  "description": "Sistem Keamanan Warga Digital, CCTV Lingkungan & Kentongan Online Desa Sukorejo",
   "start_url": "/",
   "id": "/",
   "display": "standalone",
-  "background_color": "#f8fafc",
+  "background_color": "#0f172a",
   "theme_color": "#059669",
-  "orientation": "portrait-primary",
-  "categories": ["social", "utilities", "lifestyle"],
+  "categories": ["social", "utilities", "security"],
   "icons": [
     {
-      "src": "/icons/icon.svg",
-      "sizes": "192x192 512x512",
-      "type": "image/svg+xml",
+      "src": "/images/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "/icons/icon.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "/icons/icon.svg",
       "sizes": "192x192 512x512",
       "type": "image/svg+xml",
-      "purpose": "maskable"
+      "purpose": "any"
     }
   ],
   "shortcuts": [

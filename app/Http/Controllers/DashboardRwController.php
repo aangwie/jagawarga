@@ -452,4 +452,171 @@ class DashboardRwController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Simpan Kamera CCTV Baru (Link Video / Upload File)
+     */
+    public function storeCctv(Request $request)
+    {
+        try {
+            CctvLingkungan::ensureTableExists();
+
+            $validated = $request->validate([
+                'nama_lokasi' => 'required|string|max:255',
+                'rt' => 'required|string|max:5',
+                'tipe' => 'required|in:link,upload',
+                'url_stream' => 'nullable|string',
+                'video_file' => 'nullable|file|mimes:mp4,webm,ogg,mov,mkv|max:51200',
+                'status' => 'nullable|in:aktif,nonaktif',
+            ]);
+
+            $videoPath = null;
+            $urlStream = $validated['url_stream'] ?? null;
+
+            if ($validated['tipe'] === 'upload') {
+                if ($request->hasFile('video_file')) {
+                    $file = $request->file('video_file');
+                    $filename = 'cctv_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                    $destPath = public_path('uploads/cctv');
+                    if (!file_exists($destPath)) {
+                        mkdir($destPath, 0755, true);
+                    }
+                    $file->move($destPath, $filename);
+                    $videoPath = 'uploads/cctv/' . $filename;
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Pilih file video (MP4/WebM) untuk diunggah.',
+                    ], 422);
+                }
+            } else {
+                if (empty($urlStream)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Masukkan link URL video atau stream CCTV.',
+                    ], 422);
+                }
+            }
+
+            $cctv = CctvLingkungan::create([
+                'nama_lokasi' => $validated['nama_lokasi'],
+                'rt' => $validated['rt'],
+                'tipe' => $validated['tipe'],
+                'url_stream' => $urlStream,
+                'video_path' => $videoPath,
+                'status' => $validated['status'] ?? 'aktif',
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Kamera CCTV "' . $cctv->nama_lokasi . '" berhasil ditambahkan!',
+                'cctv' => $cctv,
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('storeCctv error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menambahkan CCTV: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Perbarui Kamera CCTV (Link Video / Upload File)
+     */
+    public function updateCctv(Request $request, $id)
+    {
+        try {
+            CctvLingkungan::ensureTableExists();
+
+            $cctv = CctvLingkungan::findOrFail($id);
+
+            $validated = $request->validate([
+                'nama_lokasi' => 'required|string|max:255',
+                'rt' => 'required|string|max:5',
+                'tipe' => 'required|in:link,upload',
+                'url_stream' => 'nullable|string',
+                'video_file' => 'nullable|file|mimes:mp4,webm,ogg,mov,mkv|max:51200',
+                'status' => 'nullable|in:aktif,nonaktif',
+            ]);
+
+            $videoPath = $cctv->video_path;
+            $urlStream = $validated['url_stream'] ?? $cctv->url_stream;
+
+            if ($validated['tipe'] === 'upload') {
+                if ($request->hasFile('video_file')) {
+                    if ($cctv->video_path && file_exists(public_path($cctv->video_path))) {
+                        @unlink(public_path($cctv->video_path));
+                    }
+                    $file = $request->file('video_file');
+                    $filename = 'cctv_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                    $destPath = public_path('uploads/cctv');
+                    if (!file_exists($destPath)) {
+                        mkdir($destPath, 0755, true);
+                    }
+                    $file->move($destPath, $filename);
+                    $videoPath = 'uploads/cctv/' . $filename;
+                }
+            } else {
+                if (!empty($validated['url_stream'])) {
+                    $urlStream = $validated['url_stream'];
+                }
+            }
+
+            $cctv->update([
+                'nama_lokasi' => $validated['nama_lokasi'],
+                'rt' => $validated['rt'],
+                'tipe' => $validated['tipe'],
+                'url_stream' => $urlStream,
+                'video_path' => $videoPath,
+                'status' => $validated['status'] ?? $cctv->status,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Kamera CCTV "' . $cctv->nama_lokasi . '" berhasil diperbarui!',
+                'cctv' => $cctv,
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('updateCctv error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui CCTV: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Hapus Kamera CCTV
+     */
+    public function deleteCctv($id)
+    {
+        try {
+            CctvLingkungan::ensureTableExists();
+
+            $cctv = CctvLingkungan::find($id);
+            if ($cctv) {
+                if ($cctv->video_path && file_exists(public_path($cctv->video_path))) {
+                    @unlink(public_path($cctv->video_path));
+                }
+                $nama = $cctv->nama_lokasi;
+                $cctv->delete();
+                $pesan = 'Kamera CCTV "' . $nama . '" berhasil dihapus.';
+            } else {
+                $pesan = 'Kamera CCTV berhasil dihapus.';
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $pesan,
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('deleteCctv error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus CCTV: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }
+

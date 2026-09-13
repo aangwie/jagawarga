@@ -96,6 +96,11 @@ Route::middleware(['auth', 'role:rt,rw,bhabinkamtibmas,nakes_puskesmas'])->group
     Route::put('/api/checkpoints/{id}', [DashboardRwController::class, 'updateCheckpoint'])->name('api.checkpoints.update');
     Route::delete('/api/checkpoints/{id}', [DashboardRwController::class, 'deleteCheckpoint'])->name('api.checkpoints.delete');
 
+    // Manajemen Kamera CCTV Lingkungan (Link Video / Upload File)
+    Route::post('/api/cctv', [DashboardRwController::class, 'storeCctv'])->name('api.cctv.store');
+    Route::post('/api/cctv/{id}', [DashboardRwController::class, 'updateCctv'])->name('api.cctv.update');
+    Route::delete('/api/cctv/{id}', [DashboardRwController::class, 'deleteCctv'])->name('api.cctv.delete');
+
     // Manajemen Pengguna (User Management CRUD & Reset Perangkat)
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::post('/users', [UserController::class, 'store'])->name('users.store');
